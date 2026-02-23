@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>מערכת שליטה v22.5 - Stable Core & CRM</title>
+    <title>מערכת שליטה v22.6 - Stable & Perfected</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600;700;800&display=swap" rel="stylesheet">
@@ -82,6 +82,7 @@
         </div>
         <div class="flex items-center gap-2 overflow-x-auto">
             <button onclick="document.body.classList.toggle('focus-mode')" class="bg-slate-800 text-white text-xs px-3 py-2 rounded-lg font-bold btn whitespace-nowrap">🎯 מיקוד</button>
+            <button onclick="window.printBriefing()" class="bg-blue-100 text-blue-800 text-xs font-bold px-3 py-2 rounded-lg btn whitespace-nowrap">📄 פקודת יום</button>
             <button onclick="document.getElementById('fileInputGlobal').click()" class="bg-yellow-500 text-black text-xs font-bold px-3 py-2 rounded-lg btn whitespace-nowrap">📂 שחזור</button>
             <button onclick="window.exportData()" class="bg-blue-600 text-white text-xs font-bold px-3 py-2 rounded-lg shadow btn whitespace-nowrap">💾 גיבוי</button>
             <input type="file" id="fileInputGlobal" class="hidden" onchange="window.importData(this)">
@@ -130,7 +131,7 @@
 
                 <div class="glass-card p-4 border-l-4 border-yellow-400 bg-yellow-50/50 hide-in-focus shadow-sm">
                     <div class="font-bold text-yellow-800 mb-2">💡 הערות ושדרוגים</div>
-                    <textarea id="upgradeNotes" class="w-full h-24 bg-transparent border border-yellow-200 rounded p-2 outline-none text-sm resize-none print-show text-slate-800" placeholder="רעיונות, תקלות קטנות ודברים לשפר..." oninput="window.saveNotes(this.value)"></textarea>
+                    <textarea id="upgradeNotes" class="w-full h-24 bg-transparent border border-yellow-200 rounded p-2 outline-none text-sm resize-none text-slate-800" placeholder="רעיונות, תקלות קטנות ודברים לשפר..." oninput="window.saveNotes(this.value)"></textarea>
                 </div>
             </div>
 
@@ -204,6 +205,29 @@
         <div id="page-ops" class="col-span-12 hidden glass-card p-6 min-h-[50vh]">מפה ותכנון (יעלה בטלאי הבא)</div>
     </main>
 
+    <div id="printArea" class="hidden font-sans p-6 bg-white text-black min-h-screen">
+        <div class="border-b-4 border-black pb-4 mb-6 flex items-center justify-between">
+            <h1 class="text-4xl font-black">פקודת יום - מרכז שליטה</h1>
+            <div id="printDate" class="text-xl font-bold bg-slate-100 px-4 py-2 rounded-lg"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-10">
+            <div>
+                <h2 class="font-bold text-2xl mb-3 border-b-2 border-slate-300 pb-1">🔥 משימות קריטיות (היום ומחר)</h2>
+                <div id="pbTasks" class="text-base space-y-3 leading-relaxed"></div>
+                
+                <h2 class="font-bold text-2xl mt-8 mb-3 border-b-2 border-slate-300 pb-1">🤝 שיחות פתוחות (פגישות)</h2>
+                <div id="pbMeetings" class="text-base space-y-3 leading-relaxed"></div>
+            </div>
+            <div>
+                <h2 class="font-bold text-2xl mb-3 border-b-2 border-slate-300 pb-1">📅 הערות ולו"ז יומי</h2>
+                <div class="border-2 border-dashed border-slate-400 p-6 min-h-[200px] text-slate-500 text-lg bg-slate-50 rounded-xl">רשום הערות פה...</div>
+                
+                <h2 class="font-bold text-2xl mt-8 mb-3 border-b-2 border-slate-300 pb-1">🎓 קורסים פעילים (בקרוב)</h2>
+                <div id="pbCourses" class="text-base space-y-3 leading-relaxed"></div>
+            </div>
+        </div>
+    </div>
+
     <div id="linkModal" class="fixed inset-0 bg-black/50 z-[60] hidden flex items-center justify-center p-4">
         <div class="bg-white p-6 rounded-2xl w-full max-w-md shadow-2xl border-t-8 border-blue-600 max-h-[90vh] overflow-y-auto">
             <h3 class="font-black text-xl mb-4 text-slate-800">🔗 שיוך, ניתוב ותזמון</h3>
@@ -213,14 +237,17 @@
             
             <div class="space-y-4">
                 <div class="bg-purple-50 p-3 rounded-lg border border-purple-100">
-                    <label class="text-xs font-bold text-purple-800 mb-2 block">אנשי קשר (ניתן לבחור יותר מאחד):</label>
+                    <div class="flex justify-between items-center mb-2">
+                        <label class="text-xs font-bold text-purple-800">אנשי קשר (ניתן לבחור יותר מאחד):</label>
+                        <input type="text" id="linkCrmFilter" onkeyup="window.filterLinkCrm()" placeholder="חפש איש קשר..." class="input-std w-32 text-xs py-1 px-2 border-purple-300">
+                    </div>
                     
                     <div id="linkCrmCheckboxes" class="bg-white border rounded p-2 max-h-32 overflow-y-auto space-y-1 mb-2 text-sm text-slate-700">
                         </div>
                     
                     <div class="flex gap-2 border-t border-purple-200 pt-2 mt-2">
-                        <input type="text" id="linkNewCrmName" class="input-std text-xs border-purple-300" placeholder="לא ברשימה? הוסף שם...">
-                        <button onclick="window.quickAddLinkCrm()" class="bg-purple-600 text-white px-3 rounded font-bold text-lg btn">+</button>
+                        <input type="text" id="linkNewCrmName" class="input-std text-xs border-purple-300 font-bold" placeholder="לא ברשימה? הוסף שם ופרטים...">
+                        <button onclick="window.quickAddLinkCrm()" class="bg-purple-600 text-white px-4 rounded font-bold text-lg btn hover:bg-purple-700 shadow-sm" title="הוסף למאגר">+</button>
                     </div>
                 </div>
                 
@@ -242,8 +269,8 @@
         </div>
     </div>
 
-    <div id="contactModal" class="fixed inset-0 bg-black/50 z-[60] hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl w-full max-w-sm p-6 space-y-4 shadow-2xl">
+    <div id="contactModal" class="fixed inset-0 bg-black/60 z-[70] hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl w-full max-w-sm p-6 space-y-4 shadow-2xl border-t-8 border-green-500">
             <h3 class="font-black text-xl border-b pb-2">פרטי איש קשר</h3>
             <input type="hidden" id="crmId">
             <div class="flex gap-2">
@@ -260,7 +287,7 @@
                 <input id="cEmail" class="input-std border-blue-300" placeholder="דוא״ל (לזימוני יומן)">
             </div>
             <div class="flex gap-2 mt-4">
-                <button onclick="window.saveContact()" class="flex-1 bg-blue-600 text-white font-bold py-2 rounded-xl btn hover:bg-blue-700">שמור איש קשר</button>
+                <button onclick="window.saveContact()" class="flex-1 bg-green-600 text-white font-bold py-2 rounded-xl btn hover:bg-green-700 shadow-md">שמור איש קשר</button>
                 <button onclick="window.toggleModal('contactModal')" class="flex-1 text-slate-600 bg-slate-200 rounded-xl btn hover:bg-slate-300 font-bold">ביטול</button>
             </div>
         </div>
@@ -285,8 +312,8 @@
                 <button onclick="window.exportBugs()" class="bg-red-100 text-red-700 px-3 py-1 rounded text-xs font-bold btn hover:bg-red-200">🐞 הפק דוח תקלות</button>
             </div>
             <div class="text-sm bg-blue-50 p-4 rounded text-slate-700 font-bold mb-4 border border-blue-100">
-                ✅ גרסת יציבות (Patch 2.5) הותקנה בהצלחה.<br>
-                מודולים פעילים כעת: ליבה + CRM מתוקן (כולל מחיקה בטוחה ושיוך משופר) + משימות.
+                ✅ גרסת יציבות (Patch 2.6 - Perfection) הותקנה בהצלחה.<br>
+                תוקנו באגי מחיקה (ID Fixer), נוסף שיוך בבחירה מרובה עם חיפוש, חזרה פקודת יום.
             </div>
             <button onclick="window.toggleModal('settingsModal')" class="mt-auto w-full bg-slate-800 text-white py-3 rounded-xl font-bold btn hover:bg-slate-700 shadow-lg">סגור הגדרות</button>
         </div>
@@ -328,15 +355,27 @@
         // UI Helpers
         window.nav = (p) => { document.querySelectorAll('main > div:not(#alertsCenter)').forEach(e=>e.classList.add('hidden')); document.getElementById('page-'+p).classList.remove('hidden'); document.getElementById('sidebar').classList.add('translate-x-full'); document.getElementById('overlay').classList.add('hidden'); if(p==='allTasks'||p==='allFollows') window.renderFullLists(); };
         window.toggleSidebar = () => { document.getElementById('sidebar').classList.toggle('translate-x-full'); document.getElementById('overlay').classList.toggle('hidden'); };
-        window.toggleModal = (id) => { document.getElementById('sidebar').classList.add('translate-x-full'); document.getElementById('overlay').classList.add('hidden'); document.getElementById(id).classList.toggle('hidden'); };
+        window.toggleModal = (id) => { 
+            if(id === 'contactModal') {
+                // Keep overlay if opened from Link Modal
+                document.getElementById(id).classList.toggle('hidden');
+            } else {
+                document.getElementById('sidebar').classList.add('translate-x-full'); document.getElementById('overlay').classList.add('hidden'); document.getElementById(id).classList.toggle('hidden'); 
+            }
+        };
 
-        // FIREBASE SYNC
+        // FIREBASE SYNC & DATA HEALER
         function initSync() {
             onSnapshot(docRef, (snap) => {
                 document.getElementById('loader').classList.add('hidden');
                 if(snap.exists()) {
                     window.DB = {...window.DB, ...snap.data()};
                     ['contacts','tasks','courses','projects','meetings','bugLog'].forEach(k => { if(!window.DB[k]) window.DB[k]=[]; });
+                    
+                    // The Data Healer: Force strong string IDs on legacy items
+                    window.DB.contacts.forEach(c => { if(!c.id) c.id = String(Date.now()+Math.random()); else c.id = String(c.id); });
+                    window.DB.tasks.forEach(t => { if(!t.id) t.id = String(Date.now()+Math.random()); else t.id = String(t.id); });
+
                     window.DB_LOADED = true;
                     document.getElementById('statusInd').innerText="🟢 מחובר ומאובטח"; document.getElementById('statusInd').className="text-[10px] font-bold text-green-600";
                     document.getElementById('syncTime').innerText = `סונכרן: ${new Date().toLocaleTimeString('he-IL', {hour:'2-digit', minute:'2-digit'})}`;
@@ -361,14 +400,56 @@
 
         function renderAll() { renderCRM(); renderDashboard(); }
 
+        // --- PRINT BRIEFING (Restored) ---
+        window.printBriefing = () => {
+            document.getElementById('printDate').innerText = new Date().toLocaleDateString('he-IL');
+            const now = new Date(); const limit = new Date(); limit.setDate(limit.getDate()+1);
+            
+            let tasks = []; 
+            window.DB.tasks.forEach(t => {
+                if(!t.done && (!t.deadline || new Date(t.deadline)<=limit || t.priority==3)) {
+                    tasks.push(`[ ] ${t.text} ${t.priority==3?'(דחוף)':''}`);
+                }
+            });
+            document.getElementById('pbTasks').innerHTML = tasks.join('<br>') || '<span class="text-slate-400">אין משימות קריטיות להיום.</span>';
+            
+            let meets = [];
+            window.DB.meetings.forEach(m => {
+                let open = m.topics.filter(t => !t.done);
+                if(open.length) meets.push(`<b>${m.name}:</b> ${open.map(x=>x.text).join(' | ')}`);
+            });
+            document.getElementById('pbMeetings').innerHTML = meets.join('<br><br>') || '<span class="text-slate-400">אין נושאים פתוחים לשיחות.</span>';
+
+            document.querySelector('main').classList.add('hidden'); 
+            document.getElementById('printArea').classList.remove('hidden');
+            window.print(); 
+            setTimeout(() => {
+                document.querySelector('main').classList.remove('hidden'); 
+                document.getElementById('printArea').classList.add('hidden');
+            }, 1000);
+        };
+
         // --- CRM UI ---
         window.openContactModal = () => { document.getElementById('crmId').value=''; document.querySelectorAll('#contactModal input:not([type=hidden])').forEach(i=>i.value=''); window.toggleModal('contactModal'); };
         window.saveContact = () => {
-            const id = document.getElementById('crmId').value || Date.now();
+            const id = document.getElementById('crmId').value || String(Date.now() + Math.random());
             const c = { id, first:document.getElementById('cFirst').value.trim(), last:document.getElementById('cLast').value.trim(), role:document.getElementById('cRole').value, dist:document.getElementById('cDist').value, stat:document.getElementById('cStat').value, phone:document.getElementById('cPhone').value, email:document.getElementById('cEmail').value };
             if(!c.first) return alert('חובה להזין שם פרטי');
-            if(!document.getElementById('crmId').value) window.DB.contacts.push(c); else { const idx=window.DB.contacts.findIndex(x=>x.id==id); window.DB.contacts[idx]=c; }
+            
+            if(!document.getElementById('crmId').value) window.DB.contacts.push(c); 
+            else { const idx=window.DB.contacts.findIndex(x=>x.id===id); if(idx>=0) window.DB.contacts[idx]=c; }
+            
             window.saveData(); window.toggleModal('contactModal'); renderCRM();
+            
+            // Magic return to Link Hub if it was opened from there
+            if(window.pendingLinkCrmName) {
+                window.renderLinkCrmSelect();
+                document.querySelectorAll('.link-crm-chk').forEach(cb => {
+                    if(cb.value === window.pendingLinkCrmName) cb.checked = true;
+                });
+                document.getElementById('linkNewCrmName').value = '';
+                window.pendingLinkCrmName = null;
+            }
         };
         
         window.deleteCrm = (id) => {
@@ -376,7 +457,6 @@
             if(!c) return;
             const cName = `${c.first} ${c.last||''}`.trim();
             
-            // Safety Check: Is it linked to a task?
             const isLinkedToTask = window.DB.tasks.some(t => t.linkedCrm && t.linkedCrm.includes(cName));
             if(isLinkedToTask) {
                 alert(`⚠️ עצור! לא ניתן למחוק את "${cName}".\nהוא משויך למשימה פעילה או למעקב בדאשבורד. הסר את השיוך קודם.`);
@@ -385,8 +465,7 @@
             
             if(confirm(`האם אתה בטוח שברצונך למחוק לצמיתות את ${cName}?`)) {
                 window.DB.contacts = window.DB.contacts.filter(x => x.id !== id);
-                window.saveData();
-                renderCRM();
+                window.saveData(); renderCRM();
             }
         };
 
@@ -401,28 +480,28 @@
                     <td class="p-3 text-xs text-blue-600 border-r border-b">${c.email||'--'}</td>
                     <td class="p-3 text-center border-r border-b w-32">
                         <div class="flex gap-1 justify-center">
-                            <button onclick="window.editCrm(${c.id})" class="bg-blue-100 text-blue-700 px-2 py-1 rounded shadow-sm hover:bg-blue-200 font-bold text-xs">ערוך ✏️</button>
-                            <button onclick="window.deleteCrm(${c.id})" class="bg-red-100 text-red-700 px-2 py-1 rounded shadow-sm hover:bg-red-200 font-bold text-xs" title="מחק">🗑️</button>
+                            <button onclick="window.editCrm('${c.id}')" class="bg-blue-100 text-blue-700 px-2 py-1 rounded shadow-sm hover:bg-blue-200 font-bold text-xs" title="ערוך">✏️</button>
+                            <button onclick="window.deleteCrm('${c.id}')" class="bg-red-100 text-red-700 px-2 py-1 rounded shadow-sm hover:bg-red-200 font-bold text-xs" title="מחק">🗑️</button>
                         </div>
                     </td>
                 </tr>
             `).join('');
         }
         
-        window.editCrm = (id) => { const c=window.DB.contacts.find(x=>x.id===id); document.getElementById('crmId').value=c.id; document.getElementById('cFirst').value=c.first; document.getElementById('cLast').value=c.last; document.getElementById('cRole').value=c.role; document.getElementById('cDist').value=c.dist; document.getElementById('cStat').value=c.stat; document.getElementById('cPhone').value=c.phone; document.getElementById('cEmail').value=c.email; window.toggleModal('contactModal'); };
+        window.editCrm = (id) => { const c=window.DB.contacts.find(x=>x.id===id); if(!c) return; document.getElementById('crmId').value=c.id; document.getElementById('cFirst').value=c.first; document.getElementById('cLast').value=c.last; document.getElementById('cRole').value=c.role; document.getElementById('cDist').value=c.dist; document.getElementById('cStat').value=c.stat; document.getElementById('cPhone').value=c.phone; document.getElementById('cEmail').value=c.email; window.toggleModal('contactModal'); };
         window.toggleCrmAll = (el) => document.querySelectorAll('.crm-chk').forEach(c => c.checked=el.checked);
         window.crmAction = (type) => { let nums = []; document.querySelectorAll('.crm-chk:checked').forEach(c=>c.value&&nums.push(c.value)); if(!nums.length) return alert('לא נבחרו אנשי קשר עם טלפון מוגדר'); navigator.clipboard.writeText(nums.join(', ')); alert(`הועתקו ${nums.length} מספרים! ניתן להדביק בווצאפ.`); };
         window.exportCRM = () => { let csv = "\uFEFFשם פרטי,משפחה,תפקיד,מחוז,תחנה,טלפון,מייל\n" + window.DB.contacts.map(c=>`${c.first},${c.last},${c.role},${c.dist},${c.stat},${c.phone},${c.email}`).join('\n'); const a = document.createElement('a'); a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv); a.download='crm_export.csv'; a.click(); };
         window.processBulkCrm = () => {
             const txt = document.getElementById('bulkCrmText').value; if(!txt) return; const rows = txt.split('\n'); let added = 0;
-            rows.forEach(r => { const cols = r.split(/[\t,]/); if(cols.length>0 && cols[0].trim()) { window.DB.contacts.push({id:Date.now()+Math.random(), first:cols[0]?cols[0].trim():'', last:cols[1]?cols[1].trim():'', role:cols[2]?cols[2].trim():'', dist:cols[3]?cols[3].trim():'', stat:cols[4]?cols[4].trim():'', phone:cols[5]?cols[5].trim():'', email:cols[6]?cols[6].trim():''}); added++; } });
+            rows.forEach(r => { const cols = r.split(/[\t,]/); if(cols.length>0 && cols[0].trim()) { window.DB.contacts.push({id:String(Date.now()+Math.random()), first:cols[0]?cols[0].trim():'', last:cols[1]?cols[1].trim():'', role:cols[2]?cols[2].trim():'', dist:cols[3]?cols[3].trim():'', stat:cols[4]?cols[4].trim():'', phone:cols[5]?cols[5].trim():'', email:cols[6]?cols[6].trim():''}); added++; } });
             window.saveData(); window.toggleModal('bulkCrmModal'); alert(`נקלטו ${added} אנשי קשר.`); renderCRM();
         };
 
         // --- DASHBOARD & TASKS ---
         window.addQuickTask = () => {
             const t = document.getElementById('quickTaskText').value; const d = document.getElementById('quickTaskDate').value; if(!t) return;
-            window.DB.tasks.push({id:Date.now(), text:t, deadline:d||null, priority:document.getElementById('quickPrio').value, isFollowup:(document.getElementById('quickType').value==='followup'), done:false, note:'', linkedCrm:'', linkedEntityId:null, linkedEntityType:null});
+            window.DB.tasks.push({id:String(Date.now()+Math.random()), text:t, deadline:d||null, priority:document.getElementById('quickPrio').value, isFollowup:(document.getElementById('quickType').value==='followup'), done:false, note:'', linkedCrm:'', linkedEntityId:null, linkedEntityType:null});
             document.getElementById('quickTaskText').value=''; window.saveData(); renderDashboard();
         };
 
@@ -476,7 +555,7 @@
             const icon = i.type==='meeting'?'🤝':(i.type==='project'||i.obj.linkedEntityType==='project'?'🏗️':(i.type==='course'||i.obj.linkedEntityType==='course'?'🎓':'📝'));
             const ctx = entName ? `<div class="text-[10px] text-slate-600 bg-slate-200 px-2 py-0.5 rounded font-bold inline-block mb-1 shadow-sm">${icon} ${entName}</div>` : '';
             const crmLnk = i.obj.linkedCrm ? `<span class="text-[10px] text-purple-700 bg-purple-100 px-2 py-0.5 rounded font-bold ml-1 shadow-sm">👤 ${i.obj.linkedCrm}</span>` : '';
-            const idStr = `'${i.type}', ${i.type==='task'?i.obj.id:i.pid}, ${i.idx||0}`;
+            const idStr = `'${i.type}', '${i.type==='task'?i.obj.id:i.pid}', ${i.idx||0}`;
 
             let commBtns = '';
             if(i.obj.linkedCrm) {
@@ -524,7 +603,15 @@
             if(t==='task') { let x=window.DB.tasks.find(y=>y.id===pid); x.deadline = addD(x.deadline); window.saveData(); renderDashboard(); renderFullLists(); }
         };
 
-        // --- THE HUB (LINK MODAL) - IMPROVED ---
+        // --- THE HUB (LINK MODAL) - PERFECTED ---
+        window.filterLinkCrm = () => {
+            const v = document.getElementById('linkCrmFilter').value.toLowerCase();
+            document.querySelectorAll('.crm-cb-label').forEach(lbl => {
+                const name = lbl.getAttribute('data-name').toLowerCase();
+                lbl.style.display = name.includes(v) ? 'flex' : 'none';
+            });
+        };
+
         window.renderLinkCrmSelect = () => {
             const container = document.getElementById('linkCrmCheckboxes');
             if (window.DB.contacts.length === 0) {
@@ -533,29 +620,38 @@
             }
             container.innerHTML = window.DB.contacts.map(c => {
                 const fName = `${c.first} ${c.last||''}`.trim();
-                return `<label class="flex items-center gap-2 cursor-pointer hover:bg-purple-100 p-1.5 rounded transition"><input type="checkbox" class="link-crm-chk accent-purple-600 w-4 h-4" value="${fName}"> <span class="font-bold">${fName}</span> <span class="text-[10px] text-slate-400">(${c.role||''})</span></label>`;
+                return `<label class="crm-cb-label flex items-center gap-2 cursor-pointer hover:bg-purple-100 p-1.5 rounded transition" data-name="${fName}">
+                    <input type="checkbox" class="link-crm-chk accent-purple-600 w-4 h-4" value="${fName}"> 
+                    <span class="font-bold">${fName}</span> <span class="text-[10px] text-slate-400">(${c.role||''})</span>
+                </label>`;
             }).join('');
         };
 
+        window.pendingLinkCrmName = null;
         window.quickAddLinkCrm = () => {
             const n = document.getElementById('linkNewCrmName').value.trim();
-            if(!n) return;
+            if(!n) return alert('הקלד שם בתיבה כדי להוסיף למאגר.');
             const parts = n.split(' ');
-            window.DB.contacts.push({id:Date.now()+Math.random(), first:parts[0], last:parts.slice(1).join(' '), role:'', dist:'', stat:'', phone:'', email:''});
-            window.saveData();
-            window.renderLinkCrmSelect(); // Re-render the checkbox list
-            document.getElementById('linkNewCrmName').value = '';
             
-            // Auto-check the newly added person
-            document.querySelectorAll('.link-crm-chk').forEach(cb => {
-                if(cb.value === n) cb.checked = true;
-            });
+            // Clear CRM Modal
+            document.getElementById('crmId').value = '';
+            document.getElementById('cFirst').value = parts[0];
+            document.getElementById('cLast').value = parts.slice(1).join(' ');
+            document.getElementById('cRole').value = '';
+            document.getElementById('cDist').value = '';
+            document.getElementById('cStat').value = '';
+            document.getElementById('cPhone').value = '';
+            document.getElementById('cEmail').value = '';
+            
+            window.pendingLinkCrmName = n;
+            window.toggleModal('contactModal'); // Pop full modal over Hub
         };
 
         window.openLinkModal = (t, pid, idx) => {
             document.getElementById('linkTaskType').value = t; document.getElementById('linkTaskId').value = pid; document.getElementById('linkTaskIdx').value = idx;
             
-            window.renderLinkCrmSelect(); // Populate the checkboxes
+            window.renderLinkCrmSelect(); 
+            document.getElementById('linkCrmFilter').value = ''; // clear search
             
             const sel = document.getElementById('linkTaskEntity'); sel.innerHTML = '<option value="">-- ללא שיוך למסגרת --</option>';
             if(t === 'task') {
@@ -568,7 +664,6 @@
             if(t==='task') { obj=window.DB.tasks.find(x=>x.id===pid); dVal=obj.deadline; if(obj.linkedEntityType) sel.value=`${obj.linkedEntityType}_${obj.linkedEntityId}`; }
 
             if(obj) {
-                // Check the correct boxes based on existing links
                 if(obj.linkedCrm) {
                     const linkedNames = obj.linkedCrm.split(',').map(n => n.trim());
                     document.querySelectorAll('.link-crm-chk').forEach(cb => {
@@ -581,10 +676,9 @@
         };
 
         window.saveTaskLinks = () => {
-            const t = document.getElementById('linkTaskType').value; const pid = parseInt(document.getElementById('linkTaskId').value);
+            const t = document.getElementById('linkTaskType').value; const pid = document.getElementById('linkTaskId').value;
             const d = document.getElementById('linkTaskDate').value; const ent = document.getElementById('linkTaskEntity').value;
             
-            // Extract selected CRMs from checkboxes
             let selectedCrms = [];
             document.querySelectorAll('.link-crm-chk:checked').forEach(cb => selectedCrms.push(cb.value));
             const crmFinal = selectedCrms.join(', ');
