@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>מערכת שליטה v24.0-CORE - Command Center</title>
+    <title>מערכת שליטה מבצעית | v24.1</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600;700;800&display=swap" rel="stylesheet">
@@ -15,11 +15,13 @@
         .glass-card { background: white; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); overflow: hidden; }
         .input-std { width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem; min-height: 44px; }
         .input-std:focus { border-color: #3b82f6; outline: none; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
-        .btn { cursor: pointer; transition: transform 0.1s, box-shadow 0.1s; user-select: none; min-height: 44px; min-width: 44px; display: inline-flex; align-items: center; justify-content: center; }
+        .btn { cursor: pointer; transition: transform 0.1s, box-shadow 0.1s; user-select: none; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; }
         .btn:active { transform: scale(0.95); }
+        
         .prio-3 { border-right: 5px solid #ef4444; background-color: #fef2f2; }
         .prio-2 { border-right: 5px solid #f97316; background-color: #fff7ed; }
         .prio-1 { border-right: 5px solid #3b82f6; background-color: white; }
+        
         .dashboard-grid { display: grid; grid-template-columns: 1fr; gap: 16px; padding: 16px; max-width: 1600px; margin: 0 auto; transition: all 0.3s; }
         @media (min-width: 1024px) { .dashboard-grid { grid-template-columns: repeat(12, 1fr); gap: 24px; padding: 24px; } .col-span-12 { grid-column: span 12; } .col-span-8 { grid-column: span 8; } .col-span-4 { grid-column: span 4; } }
         
@@ -29,16 +31,21 @@
         .horizontal-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
         .kanban-col { min-width: 280px; flex: 1; display: flex; flex-direction: column; background: #f8fafc; border-radius: 8px; padding: 12px; }
         
-        /* Focus Mode */
+        /* 🎯 Focus Mode */
         body.focus-active { background-color: #0f172a; }
         body.focus-active .hide-in-focus { display: none !important; }
-        body.focus-active .dashboard-grid { border: 2px dashed #334155; padding: 20px; border-radius: 16px; background: #1e293b; }
+        body.focus-active .dashboard-grid { border: 2px dashed #475569; padding: 20px; border-radius: 16px; background: #1e293b; }
         @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
-        .btn-focus-exit { animation: pulse-red 2s infinite; background-color: #ef4444 !important; color: white !important; }
+        .btn-focus-exit { animation: pulse-red 2s infinite; background-color: #ef4444 !important; color: white !important; border: 2px solid white; }
 
         /* Log Scroll */
         .log-scroll::-webkit-scrollbar { width: 4px; }
         .log-scroll::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 4px; }
+
+        /* Drag and Drop */
+        .draggable-item { cursor: grab; }
+        .draggable-item:active { cursor: grabbing; }
+        .drag-over { border-top: 3px solid #3b82f6 !important; margin-top: 4px; padding-top: 4px; }
 
         @media print {
             @page { margin: 1cm; size: A4; }
@@ -57,9 +64,8 @@
 
     <div id="lockScreen" class="fixed inset-0 bg-slate-900 z-[200] flex flex-col items-center justify-center p-6 text-center text-white">
         <div class="mb-6 text-6xl">🔒</div>
-        <h1 class="text-3xl font-black mb-2">מרכז שליטה v24.0-CORE</h1>
-        <p class="text-slate-400 mb-2">גרסה מתוקנת - כל הבאגים הקריטיים תוקנו!</p>
-        <p class="text-slate-400 mb-8">הזן קוד: 1234</p>
+        <h1 class="text-3xl font-black mb-2">מרכז שליטה מבצעי</h1>
+        <p class="text-slate-400 mb-8">המערכת נעולה ומאובטחת. אנא הזן קוד הפעלה.</p>
         <input type="password" id="pinInput" class="input-std w-48 text-center text-2xl tracking-[0.5em] text-black mb-4" placeholder="****" onkeyup="if(event.key==='Enter') window.checkPin()">
         <button onclick="window.checkPin()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-xl text-lg transition btn">כניסה</button>
         <div id="pinError" class="text-red-400 font-bold mt-4 hidden">קוד שגוי. נסה שנית.</div>
@@ -75,59 +81,53 @@
             <div class="text-6xl mb-4">🛡️</div>
             <h2 class="text-2xl font-black text-slate-800 mb-2">חובת גיבוי יומי</h2>
             <p class="text-slate-600 mb-6">עברו למעלה מ-24 שעות מאז הגיבוי האחרון.</p>
-            <button onclick="window.exportData(true)" class="w-full bg-blue-600 text-white text-lg font-bold py-4 rounded-xl shadow-lg hover:bg-blue-700 btn">💾 הורד גיבוי</button>
+            <button onclick="window.exportData(true)" class="w-full bg-blue-600 text-white text-lg font-bold py-4 rounded-xl shadow-lg hover:bg-blue-700 btn">💾 הורד גיבוי להמשך</button>
         </div>
     </div>
 
     <nav id="topNav" class="bg-white border-b sticky top-0 z-40 px-4 py-2 shadow-sm flex flex-col md:flex-row justify-between gap-3 no-print transition-colors">
         <div class="flex items-center gap-3 cursor-pointer" onclick="window.emergencyDump()">
-            <button onclick="event.stopPropagation(); window.toggleSidebar()" class="text-xl text-slate-600 p-2 rounded hover:bg-slate-100 btn">☰</button>
-            <svg class="h-10 w-10" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="50" cy="50" r="48" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="2"/>
-                <path d="M50 20 L30 50 L40 50 L20 80 L80 80 L60 50 L70 50 Z" fill="#16a34a"/>
-                <path d="M45 80 L45 90 L55 90 L55 80 Z" fill="#78350f"/>
-                <path d="M50 50 Q60 40 55 30 Q50 45 45 35 Q40 40 50 50" fill="#ef4444"/>
-                <path d="M50 50 Q55 45 52 40 Q48 48 45 42 Q42 45 50 50" fill="#f97316"/>
-            </svg>
+            <button onclick="event.stopPropagation(); window.toggleSidebar()" class="text-xl text-slate-600 p-2 rounded hover:bg-slate-100 btn px-4">☰</button>
+            <div class="text-2xl">🌲🔥</div>
             <div onclick="event.stopPropagation(); window.nav('home')" class="cursor-pointer">
                 <div class="font-black text-slate-800 leading-tight">יער ושטחים פתוחים</div>
                 <div class="flex items-center gap-2 mt-0.5">
                     <div id="statusInd" class="text-[10px] font-bold text-slate-400">ממתין...</div>
                     <div class="text-[9px] bg-slate-100 text-slate-500 px-1 rounded">DB: <span id="dbGauge">0%</span></div>
-                    <div class="text-[9px] text-slate-400" id="syncTime">סונכרן: --:--</div>
                 </div>
             </div>
         </div>
         
         <div class="flex-1 max-w-md relative hidden md:block">
-            <input type="text" id="globalCommandInput" class="input-std bg-slate-100 border-none pl-10" placeholder="🔍 חפש..." onkeyup="window.handleGlobalCommand(this.value)">
+            <input type="text" id="globalCommandInput" class="input-std bg-slate-100 border-none pl-10" placeholder="🔍 חפש אנשים, קורסים, או הקלד משימה..." onkeyup="window.handleGlobalCommand(this.value)">
             <div id="globalCommandResults" class="absolute top-full left-0 right-0 bg-white shadow-xl rounded-b-lg border border-slate-200 mt-1 hidden z-50 max-h-64 overflow-y-auto"></div>
         </div>
 
         <div class="flex items-center gap-2 overflow-x-auto">
-            <button id="btnFocus" onclick="window.toggleFocusMode()" class="bg-slate-800 text-white text-xs px-3 py-2 rounded-lg font-bold btn whitespace-nowrap transition-colors">🎯 מיקוד</button>
-            <button onclick="window.printBriefing()" class="bg-blue-100 text-blue-800 text-xs font-bold px-3 py-2 rounded-lg btn whitespace-nowrap hide-in-focus">📄 פקודה</button>
-            <button onclick="document.getElementById('fileInputGlobal').click()" class="bg-yellow-500 text-black text-xs font-bold px-3 py-2 rounded-lg btn whitespace-nowrap hide-in-focus">📂 שחזור</button>
-            <button onclick="window.exportData()" class="bg-blue-600 text-white text-xs font-bold px-3 py-2 rounded-lg shadow btn whitespace-nowrap hide-in-focus">💾 גיבוי</button>
+            <button id="btnFocus" onclick="window.toggleFocusMode()" class="bg-slate-800 text-white text-xs px-4 py-2 rounded-lg font-bold btn whitespace-nowrap transition-colors">🎯 מיקוד</button>
+            <button onclick="window.printBriefing()" class="bg-blue-100 text-blue-800 text-xs font-bold px-4 py-2 rounded-lg btn whitespace-nowrap hide-in-focus">📄 פקודת יום</button>
+            <button onclick="document.getElementById('fileInputGlobal').click()" class="bg-yellow-500 text-black text-xs font-bold px-4 py-2 rounded-lg btn whitespace-nowrap hide-in-focus">📂 שחזור</button>
+            <button onclick="window.exportData()" class="bg-blue-600 text-white text-xs font-bold px-4 py-2 rounded-lg shadow btn whitespace-nowrap hide-in-focus">💾 גיבוי</button>
             <input type="file" id="fileInputGlobal" class="hidden" onchange="window.importData(this)" accept=".json">
         </div>
     </nav>
 
     <div id="sidebar" class="fixed inset-y-0 right-0 w-64 bg-white shadow-2xl z-50 transform translate-x-full transition-transform duration-300 border-l flex flex-col no-print">
-        <div class="p-4 border-b flex justify-between items-center bg-slate-50"><h2 class="font-black text-xl">תפריט</h2><button onclick="window.toggleSidebar()" class="text-2xl text-slate-400 btn">✕</button></div>
+        <div class="p-4 border-b flex justify-between items-center bg-slate-50"><h2 class="font-black text-xl">תפריט</h2><button onclick="window.toggleSidebar()" class="text-2xl text-slate-400 btn px-2">✕</button></div>
         <div class="flex-1 p-4 space-y-2 overflow-y-auto">
             <button onclick="window.nav('home')" class="w-full text-right p-3 rounded-lg font-bold bg-blue-50 text-blue-700 btn">🏠 ראשי</button>
-            <button onclick="window.nav('allTasks')" class="w-full text-right p-3 rounded-lg font-bold hover:bg-slate-50 btn">📋 משימות</button>
-            <button onclick="window.nav('allFollows')" class="w-full text-right p-3 rounded-lg font-bold hover:bg-slate-50 btn">⏳ מעקבים</button>
+            <button onclick="window.nav('allTasks')" class="w-full text-right p-3 rounded-lg font-bold hover:bg-slate-50 btn">📋 בנק משימות</button>
+            <button onclick="window.nav('allFollows')" class="w-full text-right p-3 rounded-lg font-bold hover:bg-slate-50 btn">⏳ בנק מעקבים</button>
             <hr class="my-2">
-            <button onclick="window.nav('crm')" class="w-full text-right p-3 rounded-lg font-bold hover:bg-slate-50 btn">👥 CRM</button>
-            <button onclick="window.nav('courses')" class="w-full text-right p-3 rounded-lg font-bold hover:bg-slate-50 btn">🎓 קורסים</button>
+            <button onclick="window.nav('crm')" class="w-full text-right p-3 rounded-lg font-bold hover:bg-slate-50 btn">👥 CRM כוחות</button>
+            <button onclick="window.nav('courses')" class="w-full text-right p-3 rounded-lg font-bold hover:bg-slate-50 btn">🎓 ניהול הכשרות</button>
             <button onclick="window.nav('projects')" class="w-full text-right p-3 rounded-lg font-bold hover:bg-slate-50 btn">🏗️ פרויקטים</button>
-            <button onclick="window.nav('meetings')" class="w-full text-right p-3 rounded-lg font-bold hover:bg-slate-50 btn">🤝 פגישות</button>
+            <button onclick="window.nav('meetings')" class="w-full text-right p-3 rounded-lg font-bold hover:bg-slate-50 btn">🤝 תיאום פגישות</button>
             <hr class="my-2">
-            <button onclick="window.nav('ops')" class="w-full text-right p-3 rounded-lg font-bold hover:bg-slate-50 btn">🚒 מפה</button>
-            <button onclick="window.toggleModal('settingsModal')" class="w-full text-right p-3 rounded-lg font-bold text-slate-500 hover:bg-slate-50 btn">⚙️ הגדרות</button>
+            <button onclick="window.nav('ops')" class="w-full text-right p-3 rounded-lg font-bold hover:bg-slate-50 btn">🚒 מפה מבצעית</button>
+            <button onclick="window.toggleModal('settingsModal')" class="w-full text-right p-3 rounded-lg font-bold text-slate-500 hover:bg-slate-50 btn">⚙️ הגדרות ותבניות</button>
         </div>
+        <div class="p-3 bg-slate-100 text-center border-t text-xs font-bold text-slate-400">גרסה v24.1-CORE</div>
     </div>
     <div id="overlay" onclick="window.toggleSidebar()" class="fixed inset-0 bg-black/30 z-45 hidden no-print"></div>
 
@@ -139,8 +139,8 @@
             <div class="col-span-12 bg-white p-3 rounded-xl border shadow-sm flex flex-wrap gap-2 items-center no-print">
                 <select id="quickPrio" class="input-std w-28 font-bold bg-slate-50"><option value="3">🔥 דחוף</option><option value="2">⚡ בינוני</option><option value="1" selected>🔹 רגיל</option></select>
                 <select id="quickType" class="input-std w-32 font-bold bg-slate-50"><option value="task">📋 לביצוע</option><option value="followup">⏳ מעקב</option></select>
-                <input id="quickTaskText" class="input-std flex-1 min-w-[200px]" placeholder="משימה (Enter)..." onkeyup="if(event.key==='Enter') window.addQuickTask()">
-                <input type="date" id="quickTaskDate" class="input-std w-36">
+                <input id="quickTaskText" class="input-std flex-1 min-w-[200px]" placeholder="הקלד משימה (Enter)..." onkeyup="if(event.key==='Enter') window.addQuickTask()">
+                <input type="date" id="quickTaskDate" class="input-std w-36" title="תאריך יעד (ריק = היום)">
                 <select id="quickRecurring" class="input-std w-32 font-bold bg-slate-50">
                     <option value="none">⏱️ חד פעמי</option>
                     <option value="daily">📅 יומי</option>
@@ -152,10 +152,13 @@
 
             <div class="col-span-12 grid grid-cols-1 md:grid-cols-3 gap-4 hide-in-focus">
                 <div class="glass-card p-3 flex items-center justify-between bg-gradient-to-r from-blue-50 to-cyan-50">
-                    <div><div class="text-xs font-bold text-slate-500 uppercase">תנאים</div><div id="weatherData" class="font-black text-lg text-slate-800">טוען...</div></div>
+                    <div><div class="text-xs font-bold text-slate-500 uppercase">תנאים מבצעיים</div><div id="weatherData" class="font-black text-lg text-slate-800">טוען...</div></div>
                     <div class="text-3xl" id="weatherIcon">🌤️</div>
                 </div>
-                <div class="glass-card p-3 md:col-span-2"><div class="text-xs font-bold text-slate-500 mb-2">קורסים</div><div id="courseHealthBars" class="space-y-2"></div></div>
+                <div class="glass-card p-3 md:col-span-2 cursor-pointer hover:bg-slate-50 transition" onclick="window.nav('courses')">
+                    <div class="text-xs font-bold text-slate-500 mb-2 flex justify-between"><span>סטטוס הכשרות פעילות</span><span class="text-blue-600">עבור לקורסים ⮞</span></div>
+                    <div id="courseHealthBars" class="space-y-2"></div>
+                </div>
             </div>
 
             <div class="col-span-12 flex gap-2 horizontal-scroll hide-in-focus" id="hashtagFilters"></div>
@@ -165,80 +168,81 @@
                     <div id="timerDisplay" class="text-5xl font-black mb-4 tracking-wider">25:00</div>
                     <div class="flex justify-center gap-2 items-center flex-wrap">
                         <input type="number" id="timerSetMin" value="25" class="w-16 text-black text-center rounded h-10 font-bold">
-                        <button onclick="window.startTimer()" id="btnTimer" class="bg-green-600 hover:bg-green-500 px-4 py-2 rounded font-bold flex items-center btn transition">התחל</button>
-                        <button onclick="window.resetTimer()" class="bg-slate-600 hover:bg-slate-500 px-3 py-2 rounded btn transition">↺</button>
+                        <button onclick="window.startTimer()" id="btnTimer" class="bg-green-600 hover:bg-green-500 px-6 py-2 rounded font-bold flex items-center btn transition">התחל</button>
+                        <button onclick="window.resetTimer()" class="bg-slate-600 hover:bg-slate-500 px-4 py-2 rounded btn transition">↺</button>
                     </div>
                 </div>
 
                 <div class="glass-card p-4 hide-in-focus border-t-4 border-indigo-400">
-                    <div class="font-bold text-indigo-900 mb-3 flex justify-between items-center"><span>⭐ חפ"ק</span><button onclick="window.openFavoritesManager()" class="text-xs bg-indigo-50 text-indigo-600 px-2 py-1 rounded">נהל</button></div>
+                    <div class="font-bold text-indigo-900 mb-3 flex justify-between items-center"><span>⭐ חפ"ק מועדפים</span><button onclick="window.openFavoritesManager()" class="text-xs bg-indigo-50 text-indigo-600 px-3 py-1 rounded btn">נהל</button></div>
                     <div id="favoritesPanel" class="grid grid-cols-2 gap-2"></div>
                 </div>
 
                 <div class="glass-card p-4 border-l-4 border-yellow-400 bg-yellow-50/50 hide-in-focus shadow-sm">
-                    <div class="font-bold text-yellow-800 mb-2">💡 הערות</div>
-                    <textarea id="upgradeNotes" class="w-full h-24 bg-transparent border border-yellow-200 rounded p-2 outline-none text-sm resize-none text-slate-800" placeholder="רעיונות..." oninput="window.saveNotes(this.value)"></textarea>
+                    <div class="font-bold text-yellow-800 mb-2">💡 הערות ושדרוגים</div>
+                    <textarea id="upgradeNotes" class="w-full h-24 bg-transparent border border-yellow-200 rounded p-2 outline-none text-sm resize-none text-slate-800" placeholder="רעיונות, תקלות קטנות ודברים לשפר..." oninput="window.saveNotes(this.value)"></textarea>
                 </div>
             </div>
 
             <div class="col-span-12 lg:col-span-8 space-y-6">
                 <div class="glass-card min-h-[300px]">
                     <div class="widget-header p-3 bg-blue-50 text-blue-900 border-b-2 border-blue-200 font-bold flex justify-between items-center">
-                        <span class="text-lg">📋 משימות (14 יום)</span>
-                        <button onclick="window.nav('allTasks')" class="text-xs bg-white border border-blue-300 px-2 py-1 rounded text-blue-700 hover:bg-blue-100 btn">הכל</button>
+                        <span class="text-lg">📋 משימות אקטיביות (14 יום)</span>
+                        <button onclick="window.nav('allTasks')" class="text-xs bg-white border border-blue-300 px-3 py-1 rounded text-blue-700 hover:bg-blue-100 btn">הצג הכל</button>
                     </div>
-                    <div class="widget-body p-0" id="listTasks"></div>
+                    <div class="widget-body p-2" id="listTasks"></div>
                 </div>
                 
                 <div class="glass-card min-h-[250px] hide-in-focus border-t-4 border-orange-400">
                     <div class="widget-header p-3 bg-orange-50 text-orange-900 border-b-2 border-orange-200 font-bold flex justify-between items-center">
-                        <span class="text-lg">⏳ מעקבים</span>
-                        <button onclick="window.nav('allFollows')" class="text-xs bg-white border border-orange-300 px-2 py-1 rounded text-orange-700 hover:bg-orange-100 btn">הכל</button>
+                        <span class="text-lg">⏳ מעקבים ופגישות</span>
+                        <button onclick="window.nav('allFollows')" class="text-xs bg-white border border-orange-300 px-3 py-1 rounded text-orange-700 hover:bg-orange-100 btn">הצג הכל</button>
                     </div>
-                    <div class="widget-body p-0" id="listFollowups"></div>
+                    <div class="widget-body p-2" id="listFollowups"></div>
                 </div>
             </div>
         </div>
 
         <div id="page-allTasks" class="col-span-12 hidden glass-card p-6 min-h-[70vh]">
-            <div class="flex justify-between items-center mb-4 border-b pb-2 flex-wrap gap-2"><h1 class="text-2xl font-black">📋 בנק משימות</h1><input type="text" id="searchAllTasks" class="input-std w-64 border-blue-300" placeholder="סנן..." onkeyup="window.renderFullLists()"></div>
-            <div id="listTasksFull" class="space-y-1"></div>
+            <div class="flex justify-between items-center mb-4 border-b pb-2 flex-wrap gap-2"><h1 class="text-2xl font-black">📋 בנק משימות מלא</h1><input type="text" id="searchAllTasks" class="input-std w-64 border-blue-300" placeholder="סנן לפי שם או פרויקט..." onkeyup="window.renderFullLists()"></div>
+            <div id="listTasksFull" class="space-y-2"></div>
         </div>
         
         <div id="page-allFollows" class="col-span-12 hidden glass-card p-6 min-h-[70vh]">
-            <div class="flex justify-between items-center mb-4 border-b pb-2 flex-wrap gap-2"><h1 class="text-2xl font-black">⏳ בנק מעקבים</h1><input type="text" id="searchAllFollows" class="input-std w-64 border-orange-300" placeholder="סנן..." onkeyup="window.renderFullLists()"></div>
-            <div id="listFollowsFull" class="space-y-1"></div>
+            <div class="flex justify-between items-center mb-4 border-b pb-2 flex-wrap gap-2"><h1 class="text-2xl font-black">⏳ בנק מעקבים מלא</h1><input type="text" id="searchAllFollows" class="input-std w-64 border-orange-300" placeholder="סנן לפי שם או פרויקט..." onkeyup="window.renderFullLists()"></div>
+            <div id="listFollowsFull" class="space-y-2"></div>
         </div>
 
         <div id="page-crm" class="col-span-12 hidden">
             <div class="flex justify-between items-center mb-4 flex-wrap gap-2">
-                <h1 class="text-2xl font-black">👥 CRM</h1>
+                <h1 class="text-2xl font-black">👥 אנשי קשר וכוחות (CRM)</h1>
                 <div class="flex gap-2 flex-wrap">
-                    <button onclick="window.toggleModal('bulkCrmModal')" class="bg-slate-200 text-slate-700 px-3 py-2 rounded text-sm font-bold btn shadow-sm">הדבק מאקסל</button>
-                    <button onclick="window.exportCRM()" class="bg-green-600 text-white px-3 py-2 rounded text-sm font-bold btn shadow-sm">יצא CSV</button>
-                    <button onclick="window.openContactModal()" class="bg-blue-600 text-white px-4 py-2 rounded text-sm font-bold btn shadow-sm">+ איש קשר</button>
+                    <button onclick="window.toggleModal('bulkCrmModal')" class="bg-slate-200 text-slate-700 px-4 py-2 rounded text-sm font-bold btn shadow-sm">הדבק מאקסל</button>
+                    <button onclick="window.exportCRM()" class="bg-green-600 text-white px-4 py-2 rounded text-sm font-bold btn shadow-sm">יצא CSV</button>
+                    <button onclick="window.openContactModal()" class="bg-blue-600 text-white px-6 py-2 rounded text-sm font-bold btn shadow-sm">+ איש קשר</button>
                 </div>
             </div>
             <div class="bg-white rounded-xl shadow border overflow-hidden horizontal-scroll">
                 <table class="w-full text-right text-sm min-w-[800px]">
-                    <thead class="bg-slate-100 font-bold border-b text-slate-700"><tr><th class="p-3 w-10 text-center"><input type="checkbox" onchange="window.toggleCrmAll(this)"></th><th class="p-3">שם</th><th class="p-3">תפקיד</th><th class="p-3">מחוז/תחנה</th><th class="p-3">טלפון</th><th class="p-3">מייל</th><th class="p-3 text-center">פעולות</th></tr></thead>
+                    <thead class="bg-slate-100 font-bold border-b text-slate-700"><tr><th class="p-3 w-10 text-center"><input type="checkbox" onchange="window.toggleCrmAll(this)"></th><th class="p-3">שם מלא</th><th class="p-3">תפקיד</th><th class="p-3">מחוז/תחנה</th><th class="p-3">טלפון</th><th class="p-3">מייל</th><th class="p-3 text-center">פעולות</th></tr></thead>
                     <tbody id="crmTable" class="divide-y divide-slate-100"></tbody>
                 </table>
             </div>
+            <div class="mt-4"><button onclick="window.crmAction('wa')" class="bg-green-500 text-white px-6 py-2 rounded-lg font-bold text-sm btn shadow flex items-center gap-2 hover:bg-green-600">💬 רשימת תפוצה ווצאפ למסומנים</button></div>
         </div>
 
         <div id="page-courses" class="col-span-12 hidden">
-            <div class="flex justify-between items-center mb-6"><h1 class="text-2xl font-black">🎓 קורסים</h1><button onclick="window.openCourseModal()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg font-bold btn shadow">+ קורס</button></div>
+            <div class="flex justify-between items-center mb-6"><h1 class="text-2xl font-black">🎓 ניהול הכשרות</h1><button onclick="window.openCourseModal()" class="bg-indigo-600 text-white px-6 py-2 rounded-lg font-bold btn shadow">+ קורס חדש</button></div>
             <div class="flex gap-4 horizontal-scroll pb-4" id="coursesGridList"></div>
         </div>
 
         <div id="page-projects" class="col-span-12 hidden">
-            <div class="flex justify-between items-center mb-6"><h1 class="text-2xl font-black">🏗️ פרויקטים</h1><button onclick="window.openProjectModal()" class="bg-purple-600 text-white px-4 py-2 rounded-lg font-bold shadow btn">+ פרויקט</button></div>
+            <div class="flex justify-between items-center mb-6"><h1 class="text-2xl font-black">🏗️ ניהול פרויקטים</h1><button onclick="window.openProjectModal()" class="bg-purple-600 text-white px-6 py-2 rounded-lg font-bold shadow btn">+ פרויקט חדש</button></div>
             <div id="projectsList" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
         </div>
 
         <div id="page-meetings" class="col-span-12 hidden">
-            <div class="flex justify-between items-center mb-6"><h1 class="text-2xl font-black">🤝 פגישות</h1><button onclick="window.openMeetingModal()" class="bg-cyan-600 text-white px-4 py-2 rounded-lg font-bold shadow btn">+ פגישה</button></div>
+            <div class="flex justify-between items-center mb-6"><h1 class="text-2xl font-black">🤝 תיאום פגישות</h1><button onclick="window.openMeetingModal()" class="bg-cyan-600 text-white px-6 py-2 rounded-lg font-bold shadow btn">+ פגישה חדשה</button></div>
             <div id="meetingsGrid" class="grid grid-cols-1 md:grid-cols-3 gap-6"></div>
         </div>
 
@@ -246,9 +250,9 @@
             <div class="glass-card min-h-[500px] border-t-8 border-slate-800 flex flex-col">
                 <div class="p-4 bg-slate-800 text-white font-bold text-lg">🚒 מפה מבצעית</div>
                 <div class="p-3 border-b bg-slate-50 flex gap-2 items-center flex-wrap">
-                    <label class="text-sm font-bold text-slate-600">נ.צ:</label>
-                    <input type="text" id="mapCoords" placeholder="31.7, 34.9" class="input-std w-64">
-                    <button onclick="window.mapLocate()" class="bg-slate-800 text-white px-4 py-2 rounded-lg font-bold btn">📍 מצא</button>
+                    <label class="text-sm font-bold text-slate-600">נ.צ (קו רוחב, קו אורך):</label>
+                    <input type="text" id="mapCoords" placeholder="31.76, 35.21" class="input-std w-64">
+                    <button onclick="window.mapLocate()" class="bg-slate-800 text-white px-6 py-2 rounded-lg font-bold btn">📍 מצא</button>
                 </div>
                 <div id="opsMapContainer" class="w-full flex-1 min-h-[600px] bg-slate-200 z-10 relative"></div>
             </div>
@@ -256,20 +260,44 @@
     </main>
 
     <div id="printArea" class="hidden font-sans p-6 bg-white text-black min-h-screen">
-        <div class="border-b-4 border-black pb-4 mb-6 flex items-center justify-between"><h1 class="text-4xl font-black">פקודת יום</h1><div id="printDate" class="text-xl font-bold bg-slate-100 px-4 py-2 rounded-lg"></div></div>
+        <div class="border-b-4 border-black pb-4 mb-6 flex items-center justify-between"><h1 class="text-4xl font-black">פקודת יום (דוח תכנון למפקד)</h1><div id="printDate" class="text-xl font-bold bg-slate-100 px-4 py-2 rounded-lg"></div></div>
         <div class="grid grid-cols-2 gap-10">
-            <div><h2 class="font-bold text-2xl mb-3 border-b-2 border-slate-300 pb-1">🔥 קריטי</h2><div id="pbTasks" class="text-base space-y-3 leading-relaxed"></div><h2 class="font-bold text-2xl mt-8 mb-3 border-b-2 border-slate-300 pb-1">🤝 פגישות</h2><div id="pbMeetings" class="text-base space-y-3 leading-relaxed"></div></div>
-            <div><h2 class="font-bold text-2xl mb-3 border-b-2 border-slate-300 pb-1">📅 הערות</h2><div class="border-2 border-dashed border-slate-400 p-6 min-h-[200px] text-slate-500 text-lg bg-slate-50 rounded-xl">רשום...</div><h2 class="font-bold text-2xl mt-8 mb-3 border-b-2 border-slate-300 pb-1">🎓 קורסים</h2><div id="pbCourses" class="text-base space-y-3 leading-relaxed"></div></div>
+            <div>
+                <h2 class="font-bold text-2xl mb-3 border-b-2 border-slate-300 pb-1">🔥 משימות פעילות (השבוע)</h2><div id="pbTasks" class="text-base space-y-3 leading-relaxed"></div>
+                <h2 class="font-bold text-2xl mt-8 mb-3 border-b-2 border-slate-300 pb-1">🤝 פגישות מתוכננות (קרוב)</h2><div id="pbMeetings" class="text-base space-y-3 leading-relaxed"></div>
+            </div>
+            <div>
+                <h2 class="font-bold text-2xl mb-3 border-b-2 border-slate-300 pb-1">📅 הערות ולו"ז</h2><div class="border-2 border-dashed border-slate-400 p-6 min-h-[200px] text-slate-500 text-lg bg-slate-50 rounded-xl">תרשום כאן...</div>
+                <h2 class="font-bold text-2xl mt-8 mb-3 border-b-2 border-slate-300 pb-1">🎓 מופעים וקורסים פעילים</h2><div id="pbCourses" class="text-base space-y-3 leading-relaxed"></div>
+            </div>
         </div>
     </div>
 
-    <!-- MODALS -->
     <div id="waPreviewModal" class="fixed inset-0 bg-black/70 z-[80] hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl w-full max-w-md p-6 space-y-4 shadow-2xl border-t-8 border-green-500">
-            <h3 class="font-black text-xl flex items-center gap-2"><span class="text-green-500">💬</span> WhatsApp</h3>
+            <h3 class="font-black text-xl flex items-center gap-2"><span class="text-green-500">💬</span> אישור לפני שליחה (WA)</h3>
             <p class="text-xs text-slate-500 font-bold" id="waPreviewTarget">נמען:</p>
-            <textarea id="waPreviewText" class="w-full h-48 input-std bg-green-50 border-green-200 resize-none"></textarea>
-            <div class="flex gap-2"><button id="btnSendWaFinal" class="flex-1 bg-green-600 text-white font-bold py-3 rounded-xl btn shadow-lg">שגר</button><button onclick="window.toggleModal('waPreviewModal')" class="flex-1 bg-slate-200 text-slate-700 rounded-xl btn font-bold">ביטול</button></div>
+            <textarea id="waPreviewText" class="w-full h-48 input-std bg-green-50 border-green-200 resize-none font-sans text-sm"></textarea>
+            <div class="flex gap-2"><button id="btnSendWaFinal" class="flex-1 bg-green-600 text-white font-bold py-3 rounded-xl btn shadow-lg text-lg">שגר הודעה</button><button onclick="window.toggleModal('waPreviewModal')" class="flex-1 bg-slate-200 text-slate-700 rounded-xl btn font-bold">ביטול</button></div>
+        </div>
+    </div>
+
+    <div id="snoozeModal" class="fixed inset-0 bg-black/50 z-[70] hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl w-full max-w-xs p-6 shadow-2xl border-t-8 border-orange-400">
+            <h3 class="font-black text-lg mb-4 text-center">⏰ תזמון מחדש</h3>
+            <input type="hidden" id="snoozeId"><input type="hidden" id="snoozeType"><input type="hidden" id="snoozeIdx">
+            <div class="grid grid-cols-2 gap-2 mb-4">
+                <button onclick="window.applySnooze('hours', 1)" class="bg-orange-50 text-orange-700 py-2 rounded font-bold border border-orange-200 hover:bg-orange-100 btn">+ שעה</button>
+                <button onclick="window.applySnooze('days', 1)" class="bg-orange-50 text-orange-700 py-2 rounded font-bold border border-orange-200 hover:bg-orange-100 btn">למחר</button>
+                <button onclick="window.applySnooze('days', 3)" class="bg-orange-50 text-orange-700 py-2 rounded font-bold border border-orange-200 hover:bg-orange-100 btn">+3 ימים</button>
+                <button onclick="window.applySnooze('days', 7)" class="bg-orange-50 text-orange-700 py-2 rounded font-bold border border-orange-200 hover:bg-orange-100 btn">+ שבוע</button>
+            </div>
+            <div class="border-t pt-3">
+                <label class="text-xs font-bold mb-1 block">תאריך ספציפי:</label>
+                <input type="date" id="snoozeSpecificDate" class="input-std mb-2">
+                <button onclick="window.applySnooze('specific', 0)" class="w-full bg-orange-500 text-white font-bold py-2 rounded btn hover:bg-orange-600">קבע תאריך</button>
+            </div>
+            <button onclick="window.toggleModal('snoozeModal')" class="w-full mt-3 bg-slate-200 py-2 rounded font-bold text-slate-600 btn">ביטול</button>
         </div>
     </div>
 
@@ -281,396 +309,1126 @@
                 <div class="bg-purple-50 p-3 rounded-lg border">
                     <div class="flex justify-between items-center mb-2"><label class="text-xs font-bold text-purple-800">אנשי קשר:</label><input type="text" id="linkCrmFilter" onkeyup="window.filterCrmList('linkCrmFilter', 'linkCrmCheckboxes')" placeholder="חפש..." class="input-std w-32 text-xs py-1 px-2"></div>
                     <div id="linkCrmCheckboxes" class="bg-white border rounded p-2 max-h-32 overflow-y-auto space-y-1 mb-2 text-sm"></div>
-                    <div class="flex gap-2 border-t pt-2"><input type="text" id="linkNewCrmName" class="input-std text-xs" placeholder="הוסף..."><button onclick="window.quickAddCrmFromModal('linkNewCrmName', window.renderLinkCrmSelect)" class="bg-purple-600 text-white px-4 rounded font-bold btn">+</button></div>
+                    <div class="flex gap-2 border-t pt-2"><input type="text" id="linkNewCrmName" class="input-std text-xs" placeholder="הוסף חדש (יפתח חלון)..."><button onclick="window.quickAddCrmFromModal('linkNewCrmName', window.renderLinkCrmSelect)" class="bg-purple-600 text-white px-4 rounded font-bold btn">+</button></div>
                 </div>
                 <div class="bg-slate-50 p-3 rounded-lg border">
                     <div><label class="text-xs font-bold mb-1 block">תאריך:</label><input type="date" id="linkTaskDate" class="input-std"></div>
                     <div class="mt-2"><label class="text-xs font-bold mb-1 block">תדירות:</label><select id="linkTaskRecurringType" class="input-std"><option value="none">חד פעמי</option><option value="daily">יומי</option><option value="weekly">שבועי</option><option value="monthly">חודשי</option></select></div>
                 </div>
-                <div class="bg-blue-50 p-3 rounded-lg border"><label class="text-xs font-bold mb-1 block">מסגרת:</label><select id="linkTaskEntity" class="input-std"></select></div>
+                <div class="bg-blue-50 p-3 rounded-lg border"><label class="text-xs font-bold mb-1 block">שיוך למסגרת (קורס/פרויקט):</label><select id="linkTaskEntity" class="input-std"></select></div>
             </div>
-            <div class="flex gap-2 mt-6"><button onclick="window.saveTaskLinks()" class="flex-1 bg-blue-600 text-white font-bold py-3 rounded-xl btn">אשר</button><button onclick="window.toggleModal('linkModal')" class="flex-1 bg-slate-200 py-3 rounded-xl btn">ביטול</button></div>
+            <div class="flex gap-2 mt-6"><button onclick="window.saveTaskLinks()" class="flex-1 bg-blue-600 text-white font-bold py-3 rounded-xl btn hover:bg-blue-700 text-lg">שמור עדכון</button><button onclick="window.toggleModal('linkModal')" class="flex-1 bg-slate-200 py-3 rounded-xl btn font-bold">סגור</button></div>
         </div>
     </div>
 
     <div id="contactModal" class="fixed inset-0 bg-black/60 z-[70] hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl w-full max-w-sm p-6 space-y-4 shadow-2xl border-t-8 border-green-500">
-            <h3 class="font-black text-xl border-b pb-2">איש קשר</h3><input type="hidden" id="crmId">
-            <div class="flex gap-2"><input id="cFirst" class="input-std font-bold bg-slate-50" placeholder="שם *"><input id="cLast" class="input-std bg-slate-50" placeholder="משפחה"></div>
-            <input id="cRole" class="input-std" placeholder="תפקיד">
+            <h3 class="font-black text-xl border-b pb-2">איש קשר במאגר</h3><input type="hidden" id="crmId">
+            <div class="flex gap-2"><input id="cFirst" class="input-std font-bold bg-slate-50" placeholder="שם פרטי *"><input id="cLast" class="input-std bg-slate-50" placeholder="משפחה"></div>
+            <input id="cRole" class="input-std" placeholder="תפקיד מלא">
             <div class="flex gap-2"><input id="cDist" class="input-std" placeholder="מחוז"><input id="cStat" class="input-std" placeholder="תחנה"></div>
-            <div class="bg-slate-50 p-3 rounded-lg border"><input id="cPhone" class="input-std mb-2" placeholder="טלפון"><input id="cEmail" class="input-std" placeholder="מייל"></div>
-            <div class="flex gap-2"><button onclick="window.saveContact()" class="flex-1 bg-green-600 text-white font-bold py-3 rounded-xl btn">שמור</button><button onclick="window.toggleModal('contactModal')" class="flex-1 bg-slate-200 rounded-xl btn">ביטול</button></div>
+            <div class="bg-slate-50 p-3 rounded-lg border"><input id="cPhone" class="input-std mb-2 border-green-300" placeholder="טלפון נייד"><input id="cEmail" class="input-std border-blue-300" placeholder="מייל"></div>
+            <div class="flex gap-2"><button onclick="window.saveContact()" class="flex-1 bg-green-600 text-white font-bold py-3 rounded-xl btn hover:bg-green-700">שמור איש קשר</button><button onclick="window.toggleModal('contactModal')" class="flex-1 bg-slate-200 rounded-xl btn font-bold">ביטול</button></div>
         </div>
     </div>
 
     <div id="courseModal" class="fixed inset-0 bg-black/50 z-[60] hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl w-full max-w-lg p-6 space-y-4 shadow-2xl border-t-8 border-indigo-600 max-h-[90vh] overflow-y-auto">
-            <h3 class="font-black text-xl border-b pb-2" id="courseModalTitle">קורס</h3><input type="hidden" id="crsId">
-            <select id="cType" class="input-std font-bold bg-indigo-50" onchange="window.tglCrs()"><option value="trend">🎓 מגמה</option><option value="event">🎪 מופע</option></select>
-            <input id="cName" class="input-std font-bold text-lg" placeholder="שם *">
+            <h3 class="font-black text-xl border-b pb-2" id="courseModalTitle">קורס חדש</h3><input type="hidden" id="crsId">
+            <select id="cType" class="input-std font-bold bg-indigo-50" onchange="window.tglCrs()"><option value="trend">🎓 קורס מגמה (עם שלבי חובה)</option><option value="event">🎪 מופע / אימון (חד יומי)</option></select>
+            <input id="cName" class="input-std font-bold text-lg" placeholder="שם המסגרת *">
             <div id="cDates" class="grid grid-cols-2 gap-3 bg-slate-50 p-3 rounded-lg border">
-                <div><label class="text-[10px] font-bold">סגל</label><input type="date" id="cdS" class="input-std"></div>
+                <div><label class="text-[10px] font-bold">פתיחת סגל</label><input type="date" id="cdS" class="input-std"></div>
                 <div><label class="text-[10px] font-bold">סיום סגל</label><input type="date" id="cdE" class="input-std"></div>
-                <div><label class="text-[10px] font-bold text-blue-700">קורס *</label><input type="date" id="cdCS" class="input-std border-blue-400"></div>
+                <div><label class="text-[10px] font-bold text-blue-700">פתיחת קורס *</label><input type="date" id="cdCS" class="input-std border-blue-400"></div>
                 <div><label class="text-[10px] font-bold">סיום קורס</label><input type="date" id="cdCE" class="input-std"></div>
             </div>
-            <div id="eventDateContainer" class="hidden bg-slate-50 p-3 rounded-lg border"><label class="text-xs font-bold">תאריך</label><input type="date" id="dEventDate" class="input-std"></div>
+            <div id="eventDateContainer" class="hidden bg-slate-50 p-3 rounded-lg border"><label class="text-xs font-bold">תאריך המופע</label><input type="date" id="dEventDate" class="input-std"></div>
             <div class="bg-indigo-50 p-3 rounded-lg border space-y-2">
-                <input type="text" id="cLinkSyllabus" class="input-std text-xs" placeholder="🔗 סילבוס">
-                <input type="text" id="cLinkRoster" class="input-std text-xs" placeholder="🔗 חניכים">
+                <input type="text" id="cLinkSyllabus" class="input-std text-xs" placeholder="🔗 קישור לסילבוס בענן">
+                <input type="text" id="cLinkRoster" class="input-std text-xs" placeholder="🔗 קישור לרשימת חניכים">
             </div>
             <div class="grid grid-cols-2 gap-3">
-                <div><label class="text-xs font-bold">מפקד</label><input type="text" id="cCmdr" class="input-std text-sm"></div>
-                <div><label class="text-xs font-bold">מתאמת</label><input type="text" id="cCoord" class="input-std text-sm"></div>
+                <div><label class="text-xs font-bold text-slate-700">מפקד מסגרת</label><input type="text" id="cCmdr" class="input-std text-sm" placeholder="שם..."></div>
+                <div><label class="text-xs font-bold text-slate-700">מתאמת</label><input type="text" id="cCoord" class="input-std text-sm" placeholder="שם..."></div>
             </div>
             <div class="border-t pt-3">
-                <label class="text-xs font-bold mb-2 block">סגל:</label>
-                <input type="text" id="crsCrmFilter" onkeyup="window.filterCrmList('crsCrmFilter', 'crsStaffCheckboxes')" placeholder="חפש..." class="input-std w-full text-xs py-1 px-2 mb-2">
+                <label class="text-xs font-bold mb-2 block">סגל ההדרכה:</label>
+                <input type="text" id="crsCrmFilter" onkeyup="window.filterCrmList('crsCrmFilter', 'crsStaffCheckboxes')" placeholder="חפש במאגר..." class="input-std w-full text-xs py-1 px-2 mb-2">
                 <div id="crsStaffCheckboxes" class="bg-white border rounded p-2 max-h-24 overflow-y-auto space-y-1 mb-2 text-sm"></div>
-                <div class="flex gap-2"><input type="text" id="crsNewStaff" class="input-std text-xs" placeholder="הוסף..."><button onclick="window.quickAddCrmFromModal('crsNewStaff', window.renderCrsStaffSelect)" class="bg-slate-300 px-3 rounded font-bold btn">+</button></div>
+                <div class="flex gap-2"><input type="text" id="crsNewStaff" class="input-std text-xs" placeholder="חסר? הוסף..."><button onclick="window.quickAddCrmFromModal('crsNewStaff', window.renderCrsStaffSelect)" class="bg-slate-300 px-3 rounded font-bold btn hover:bg-slate-400">+</button></div>
             </div>
-            <div class="flex gap-2"><button onclick="window.saveCourse()" class="flex-1 bg-indigo-600 text-white font-bold py-3 rounded-xl btn">שמור</button><button onclick="window.toggleModal('courseModal')" class="flex-1 bg-slate-200 rounded-xl btn">ביטול</button></div>
+            <div class="flex gap-2"><button onclick="window.saveCourse()" class="flex-1 bg-indigo-600 text-white font-bold py-3 rounded-xl btn hover:bg-indigo-700 text-lg">שמור</button><button onclick="window.toggleModal('courseModal')" class="flex-1 bg-slate-200 rounded-xl btn font-bold">ביטול</button></div>
         </div>
     </div>
 
     <div id="projectModal" class="fixed inset-0 bg-black/50 z-[60] hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl w-full max-w-lg p-6 space-y-4 shadow-2xl border-t-8 border-purple-600 max-h-[90vh] overflow-y-auto">
             <h3 class="font-black text-xl border-b pb-2" id="projModalTitle">פרויקט</h3><input type="hidden" id="projId">
-            <input id="projName" class="input-std font-bold text-lg" placeholder="שם *">
-            <textarea id="projDesc" class="input-std h-20" placeholder="מטרות..."></textarea>
+            <input id="projName" class="input-std font-bold text-lg" placeholder="שם הפרויקט *">
+            <textarea id="projDesc" class="input-std h-20" placeholder="מטרות ותיאור..."></textarea>
             <div class="bg-purple-50 p-3 rounded-lg border space-y-2">
-                <input type="text" id="pLinkDrive" class="input-std text-xs" placeholder="🔗 ענן">
-                <div class="flex justify-between items-center mb-1 pt-2 border-t"><label class="text-xs font-bold">מנהלים:</label><input type="text" id="projMgrFilter" onkeyup="window.filterCrmList('projMgrFilter', 'projMgrCheckboxes')" placeholder="חפש..." class="input-std w-24 text-xs py-1 px-2"></div>
+                <input type="text" id="pLinkDrive" class="input-std text-xs" placeholder="🔗 קישור לתיקיית הענן">
+                <div class="flex justify-between items-center mb-1 pt-2 border-t"><label class="text-xs font-bold text-purple-900">מנהלים:</label><input type="text" id="projMgrFilter" onkeyup="window.filterCrmList('projMgrFilter', 'projMgrCheckboxes')" placeholder="חפש..." class="input-std w-32 text-xs py-1 px-2 border-purple-300"></div>
                 <div id="projMgrCheckboxes" class="bg-white border rounded p-2 max-h-24 overflow-y-auto text-sm"></div>
-                <div class="flex gap-2 pt-2"><input type="text" id="projNewMgr" class="input-std text-xs" placeholder="הוסף..."><button onclick="window.quickAddCrmFromModal('projNewMgr', window.renderProjMgrSelect)" class="bg-purple-300 px-3 rounded font-bold btn">+</button></div>
+                <div class="flex gap-2 pt-2"><input type="text" id="projNewMgr" class="input-std text-xs border-purple-300" placeholder="הוסף מנהל חדש..."><button onclick="window.quickAddCrmFromModal('projNewMgr', window.renderProjMgrSelect)" class="bg-purple-600 text-white px-3 rounded font-bold btn">+</button></div>
             </div>
-            <div id="projFirstMilestone" class="border-t pt-3"><label class="text-xs font-bold">אבן דרך:</label><div class="flex gap-2 mt-1"><input id="projMilestone" class="input-std flex-1" placeholder="משימה..."><input type="date" id="projDate" class="input-std w-32"></div></div>
-            <div class="flex gap-2"><button onclick="window.saveProject()" class="flex-1 bg-purple-600 text-white font-bold py-3 rounded-xl btn">שמור</button><button onclick="window.toggleModal('projectModal')" class="flex-1 bg-slate-200 rounded-xl btn">ביטול</button></div>
+            <div id="projFirstMilestone" class="border-t pt-3"><label class="text-xs font-bold">אבן דרך (משימה ראשונה):</label><div class="flex gap-2 mt-1"><input id="projMilestone" class="input-std flex-1" placeholder="לדוגמה: בניית תקציב..."><input type="date" id="projDate" class="input-std w-32"></div></div>
+            <div class="flex gap-2"><button onclick="window.saveProject()" class="flex-1 bg-purple-600 text-white font-bold py-3 rounded-xl btn hover:bg-purple-700 text-lg">שמור פרויקט</button><button onclick="window.toggleModal('projectModal')" class="flex-1 bg-slate-200 rounded-xl btn font-bold">ביטול</button></div>
         </div>
     </div>
 
     <div id="meetingModal" class="fixed inset-0 bg-black/50 z-[60] hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl w-full max-w-md p-6 space-y-4 shadow-2xl border-t-8 border-cyan-500">
-            <h3 class="font-black text-xl border-b pb-2">פגישה</h3>
-            <div class="bg-cyan-50 p-3 rounded-lg border flex gap-2 items-center"><label class="text-xs font-bold">תאריך:</label><input type="date" id="meetDate" class="input-std w-full bg-white"></div>
+            <h3 class="font-black text-xl border-b pb-2">ישיבה / פגישה</h3>
+            <div class="bg-cyan-50 p-3 rounded-lg border flex gap-2 items-center"><label class="text-xs font-bold text-cyan-900">תאריך מתוכנן:</label><input type="date" id="meetDate" class="input-std w-full bg-white border-cyan-200"></div>
             <div class="bg-slate-50 p-3 rounded-lg border">
-                <label class="text-xs font-bold mb-1 block">גורם:</label>
-                <input type="text" id="meetCrmFilter" onkeyup="window.filterCrmList('meetCrmFilter', 'meetCrmCheckboxes')" placeholder="חפש..." class="input-std w-full text-xs py-1 px-2 mb-2">
+                <label class="text-xs font-bold mb-1 block">גורם קשור:</label>
+                <input type="text" id="meetCrmFilter" onkeyup="window.filterCrmList('meetCrmFilter', 'meetCrmCheckboxes')" placeholder="חפש במאגר..." class="input-std w-full text-xs py-1 px-2 mb-2">
                 <div id="meetCrmCheckboxes" class="bg-white border rounded p-2 max-h-32 overflow-y-auto text-sm"></div>
-                <div class="flex gap-2 border-t pt-2 mt-2"><input type="text" id="meetNewCrm" class="input-std text-xs" placeholder="הוסף..."><button onclick="window.quickAddCrmFromModal('meetNewCrm', window.renderMeetCrmSelect)" class="bg-slate-300 px-3 rounded font-bold btn">+</button></div>
+                <div class="flex gap-2 border-t pt-2 mt-2"><input type="text" id="meetNewCrm" class="input-std text-xs" placeholder="הוסף חדש..."><button onclick="window.quickAddCrmFromModal('meetNewCrm', window.renderMeetCrmSelect)" class="bg-slate-800 text-white px-3 rounded font-bold btn">+</button></div>
             </div>
-            <div class="flex gap-2"><button onclick="window.saveMeeting()" class="flex-1 bg-cyan-600 text-white font-bold py-3 rounded-xl btn">פתח</button><button onclick="window.toggleModal('meetingModal')" class="flex-1 bg-slate-200 rounded-xl btn">ביטול</button></div>
+            <div class="flex gap-2"><button onclick="window.saveMeeting()" class="flex-1 bg-cyan-600 text-white font-bold py-3 rounded-xl btn hover:bg-cyan-700 text-lg">צור ישיבה</button><button onclick="window.toggleModal('meetingModal')" class="flex-1 bg-slate-200 rounded-xl btn font-bold">ביטול</button></div>
         </div>
     </div>
 
     <div id="settingsModal" class="fixed inset-0 bg-black/50 z-[60] hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-xl w-full max-w-4xl p-6 h-[85vh] flex flex-col shadow-2xl border-t-8 border-slate-800">
             <div class="flex justify-between items-center mb-4 border-b pb-2 flex-wrap gap-2">
-                <h3 class="text-2xl font-black">⚙️ הגדרות</h3>
+                <h3 class="text-2xl font-black">⚙️ הגדרות, גיבויים ותבניות</h3>
                 <div class="flex gap-2">
-                    <button onclick="window.resetTemplatesToDefault()" class="bg-orange-100 text-orange-700 px-3 py-1 rounded text-xs font-bold btn">🔄 שחזר תבניות</button>
-                    <button onclick="window.exportBugs()" class="bg-red-100 text-red-700 px-3 py-1 rounded text-xs font-bold btn">🐞 דוח</button>
+                    <button onclick="window.resetTemplatesToDefault()" class="bg-orange-100 text-orange-700 px-3 py-2 rounded text-xs font-bold btn hover:bg-orange-200">🔄 איפוס תבניות חובה</button>
+                    <button onclick="window.exportBugs()" class="bg-red-100 text-red-700 px-3 py-2 rounded text-xs font-bold btn hover:bg-red-200">🐞 דוח תקלות</button>
                 </div>
             </div>
             <div class="flex-1 overflow-y-auto pr-2 pb-4">
+                
+                <div class="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+                    <h4 class="font-bold text-red-800 mb-2">⚠️ אזור סכנה (מחיקת מודולים)</h4>
+                    <p class="text-xs text-red-600 mb-3">מחק נתונים ספציפיים ללא איפוס של כל המערכת. פעולה זו לא ניתנת לביטול!</p>
+                    <div class="flex gap-2 flex-wrap">
+                        <button onclick="window.modularReset('tasks')" class="bg-white border border-red-300 text-red-600 px-3 py-1 text-xs rounded btn hover:bg-red-100">מחק כל המשימות והמעקבים</button>
+                        <button onclick="window.modularReset('meetings')" class="bg-white border border-red-300 text-red-600 px-3 py-1 text-xs rounded btn hover:bg-red-100">מחק כל הפגישות</button>
+                        <button onclick="window.modularReset('projects')" class="bg-white border border-red-300 text-red-600 px-3 py-1 text-xs rounded btn hover:bg-red-100">מחק כל הפרויקטים</button>
+                    </div>
+                </div>
+
                 <div class="mb-6">
-                    <h4 class="font-bold text-lg mb-1 text-indigo-800">📋 תבניות שלבי חובה</h4>
-                    <p class="text-xs text-slate-500 mb-3 bg-slate-50 p-2 rounded border">תגיות: <code>[שם_קורס]</code>, <code>[שם_מפקד]</code>, <code>[שם_מתאמת]</code></p>
+                    <h4 class="font-bold text-lg mb-1 text-indigo-800">📋 תבניות שלבי חובה (לפתיחת קורס)</h4>
+                    <p class="text-xs text-slate-500 mb-3 bg-slate-50 p-2 rounded border">באפשרותך לערוך את הימים ואת טקסט הווצאפ שיקפוץ בהתראה.<br>תגיות: <code>[שם_קורס]</code>, <code>[שם_מפקד]</code>, <code>[שם_מתאמת]</code></p>
                     <div id="templatesEditorList" class="space-y-3"></div>
-                    <button onclick="window.addTemplateStep()" class="mt-4 w-full bg-indigo-100 text-indigo-700 py-3 rounded-lg font-bold border border-indigo-300 border-dashed">➕ הוסף שלב</button>
+                    <button onclick="window.addTemplateStep()" class="mt-4 w-full bg-indigo-100 hover:bg-indigo-200 text-indigo-700 py-3 rounded-lg font-bold border border-indigo-300 border-dashed btn">➕ הוסף שלב כללי חדש לתבנית</button>
                 </div>
             </div>
-            <div class="mt-4 pt-4 border-t"><button onclick="window.closeSettingsModal()" class="w-full bg-slate-800 text-white py-3 rounded-xl font-bold btn">שמור וסגור</button></div>
+            <div class="mt-4 pt-4 border-t"><button onclick="window.closeSettingsModal()" class="w-full bg-slate-800 text-white py-3 rounded-xl font-bold btn hover:bg-slate-700 text-lg">שמור שינויים וסגור</button></div>
         </div>
     </div>
     
     <div id="favoritesModal" class="fixed inset-0 bg-black/50 z-[60] hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl w-full max-w-sm p-6 shadow-2xl border-t-8 border-indigo-400">
-            <h3 class="font-black text-xl border-b pb-2 mb-4">נהל חפ"ק</h3>
-            <input type="text" id="favCrmFilter" onkeyup="window.filterCrmList('favCrmFilter', 'favCrmCheckboxes')" placeholder="חפש..." class="input-std w-full text-xs py-1 px-2 mb-2">
+            <h3 class="font-black text-xl border-b pb-2 mb-4">נהל מועדפי חפ"ק</h3>
+            <p class="text-xs text-slate-500 mb-3">סמן את אנשי הקשר שיופיעו קבוע במסך הראשי לגישה מהירה.</p>
+            <input type="text" id="favCrmFilter" onkeyup="window.filterCrmList('favCrmFilter', 'favCrmCheckboxes')" placeholder="חפש..." class="input-std w-full text-xs py-1 px-2 mb-2 border-indigo-200">
             <div id="favCrmCheckboxes" class="bg-white border rounded p-2 h-64 overflow-y-auto text-sm"></div>
-            <div class="mt-4"><button onclick="window.saveFavorites()" class="w-full bg-indigo-600 text-white font-bold py-2 rounded-xl btn">שמור</button></div>
+            <div class="mt-4 flex gap-2"><button onclick="window.saveFavorites()" class="flex-1 bg-indigo-600 text-white font-bold py-3 rounded-xl btn hover:bg-indigo-700">שמור בחירה</button><button onclick="window.toggleModal('favoritesModal')" class="bg-slate-200 px-4 rounded-xl btn font-bold">סגור</button></div>
         </div>
     </div>
 
-    <!-- BULK CRM MODAL (FIXED!) -->
     <div id="bulkCrmModal" class="fixed inset-0 bg-black/50 z-[60] hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl w-full max-w-2xl p-6 shadow-2xl border-t-8 border-slate-800">
-            <h3 class="font-black text-xl border-b pb-2 mb-4">הדבקה מאקסל</h3>
-            <p class="text-xs text-slate-500 mb-3">הדבק טבלה (עמודות: שם, משפחה, תפקיד, מחוז, תחנה, טלפון, מייל)</p>
-            <textarea id="bulkCrmText" class="input-std h-64 font-mono text-xs resize-none" placeholder="שם	משפחה	תפקיד..."></textarea>
-            <div class="flex gap-2 mt-4"><button onclick="window.processBulkCrm()" class="flex-1 bg-green-600 text-white font-bold py-3 rounded-xl btn">קלוט</button><button onclick="window.toggleModal('bulkCrmModal')" class="flex-1 bg-slate-200 rounded-xl btn">ביטול</button></div>
+            <h3 class="font-black text-xl border-b pb-2 mb-4">הדבקה מאקסל למאגר</h3>
+            <p class="text-xs text-slate-500 mb-3">הדבק טבלה ישירות מהאקסל. סדר העמודות: שם פרטי | משפחה | תפקיד | מחוז | תחנה | טלפון | מייל.</p>
+            <textarea id="bulkCrmText" class="input-std h-64 font-mono text-xs resize-none bg-slate-50" placeholder="שם	משפחה	תפקיד..."></textarea>
+            <div class="flex gap-2 mt-4"><button onclick="window.processBulkCrm()" class="flex-1 bg-green-600 text-white font-bold py-3 rounded-xl btn text-lg">קלוט נתונים</button><button onclick="window.toggleModal('bulkCrmModal')" class="flex-1 bg-slate-200 rounded-xl btn font-bold">ביטול</button></div>
         </div>
     </div>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, doc, onSnapshot, setDoc, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getFirestore, doc, onSnapshot, setDoc, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        // ==========================================
+        // 1. FIREBASE CONFIG & INIT
+        // ==========================================
+        const firebaseConfig = { 
+            apiKey: "AIzaSyDHZoJjmp5SnMJCZBvtkmLngxQCbFRaH1k", 
+            authDomain: "wildfiredashboard-a0328.firebaseapp.com", 
+            projectId: "wildfiredashboard-a0328", 
+            storageBucket: "wildfiredashboard-a0328.firebasestorage.app", 
+            messagingSenderId: "151169183658", 
+            appId: "1:151169183658:web:9df7a311ec7e4dbfbbc5d3" 
+        };
+        const app = initializeApp(firebaseConfig); 
+        const db = getFirestore(app);
+        
+        try { enableIndexedDbPersistence(db).catch(e => { console.warn("Offline DB Error", e); }); } catch(e) {}
+        const docRef = doc(db, "data", "main");
 
-    // FIREBASE
-    const firebaseConfig = { apiKey: "AIzaSyDHZoJjmp5SnMJCZBvtkmLngxQCbFRaH1k", authDomain: "wildfiredashboard-a0328.firebaseapp.com", projectId: "wildfiredashboard-a0328", storageBucket: "wildfiredashboard-a0328.firebasestorage.app", messagingSenderId: "151169183658", appId: "1:151169183658:web:9df7a311ec7e4dbfbbc5d3" };
-    const app = initializeApp(firebaseConfig); 
-    const db = getFirestore(app);
-    try { enableIndexedDbPersistence(db).catch(e=>{}); } catch(e) {}
-    const docRef = doc(db, "data", "main");
+        // ==========================================
+        // 2. GLOBAL STATE & LOGGERS
+        // ==========================================
+        window.DB = { 
+            contacts: [], tasks: [], courses: [], projects: [], meetings: [], 
+            templates: [], favorites: [], bugLog: [], lastBackup: 0, upgradeNotes: "" 
+        };
+        window.DB_LOADED = false;
+        window.activeHashtag = null;
+        window.openAccordions = new Set(); // השומר החכם של התפריטים הפתוחים
 
-    // STATE
-    window.DB = { contacts: [], tasks: [], courses: [], projects: [], meetings: [], templates: [], favorites: [], bugLog:[], lastBackup: 0, upgradeNotes: "" };
-    window.DB_LOADED = false;
-    window.activeHashtag = null;
+        // Default Templates (כולל השלבים החדשים שביקשת)
+        window.defaultTemplates = [
+            {n: "פגישת סטטוס מוכנות", a: "cdCS", d: -14, msg: "היי [שם_מפקד] ו-[שם_מתאמת], תזכורת לפגישת סטטוס מוכנות לקורס [שם_קורס]."},
+            {n: "לשלוח הדפסות", a: "cdCS", d: -14, msg: ""},
+            {n: "אישור תוכניות (מופע)", a: "cdCS", d: -7, msg: ""},
+            {n: "אישור רשימת חניכים", a: "cdCS", d: -7, msg: ""},
+            {n: "הכנת סילבוס", a: "cdCS", d: -14, msg: ""},
+            {n: "תיאום ציוד ולוגיסטיקה", a: "cdCS", d: -7, msg: ""},
+            {n: "דיווח בטיחות", a: "cdCS", d: -5, msg: ""},
+            {n: "פתיחת סגל", a: "cdS", d: 0, msg: "שלום [שם_מפקד], נפתח סגל לקורס [שם_קורס]"},
+            {n: "פתיחת קורס", a: "cdCS", d: 0, msg: ""},
+            {n: "אישור תעודות סיום", a: "cdCE", d: -5, msg: ""},
+            {n: "טופס משוב על מרצה/יועץ", a: "cdCE", d: 0, msg: ""},
+            {n: "סיום קורס", a: "cdCE", d: 0, msg: ""},
+            {n: "דוח סיכום קורס", a: "cdCE", d: 3, msg: ""}
+        ];
 
-    // DEFAULT TEMPLATES (FIXED!)
-    window.defaultTemplates = [
-        {n: "פתיחת סגל", a: "cdS", d: 0, msg: "שלום [שם_מפקד], נפתח סגל לקורס [שם_קורס]"},
-        {n: "אישור רשימת חניכים", a: "cdCS", d: -7, msg: ""},
-        {n: "הכנת סילבוס", a: "cdCS", d: -14, msg: ""},
-        {n: "אישור מדריכים", a: "cdCS", d: -10, msg: ""},
-        {n: "תיאום ציוד", a: "cdCS", d: -7, msg: ""},
-        {n: "דיווח בטיחות", a: "cdCS", d: -5, msg: ""},
-        {n: "פתיחת קורס", a: "cdCS", d: 0, msg: ""},
-        {n: "ביקור ביניים", a: "cdCS", d: 7, msg: ""},
-        {n: "מבחן ביניים", a: "cdCS", d: 14, msg: ""},
-        {n: "סיור סיכום", a: "cdCE", d: -3, msg: ""},
-        {n: "מבחן סופי", a: "cdCE", d: -1, msg: ""},
-        {n: "סיום קורס", a: "cdCE", d: 0, msg: ""},
-        {n: "דוח סיכום", a: "cdCE", d: 3, msg: ""},
-        {n: "חלוקת תעודות", a: "cdCE", d: 7, msg: ""}
-    ];
+        window.onerror = function(msg, url, line) { 
+            if(!window.DB.bugLog) window.DB.bugLog = []; 
+            window.DB.bugLog.push(`[${new Date().toLocaleTimeString('he-IL')}] ${msg} | L:${line}`); 
+            if(window.DB.bugLog.length > 50) window.DB.bugLog.shift(); 
+            return false; 
+        };
+        
+        window.exportBugs = () => { 
+            navigator.clipboard.writeText(`v24.1-CORE\nDB: ${new Blob([JSON.stringify(window.DB)]).size}B\n` + (window.DB.bugLog||[]).join('\n')); 
+            alert('דוח תקלות הועתק ללוח!'); 
+        };
 
-    // ERROR LOGGER
-    window.onerror = function(msg, url, line) { if(!window.DB.bugLog) window.DB.bugLog = []; window.DB.bugLog.push(`[${new Date().toLocaleTimeString('he-IL')}] ${msg} | L:${line}`); if(window.DB.bugLog.length > 50) window.DB.bugLog.shift(); return false; };
-    window.exportBugs = () => { navigator.clipboard.writeText(`v24.0-CORE\nDB: ${new Blob([JSON.stringify(window.DB)]).size}B\n` + (window.DB.bugLog||[]).join('\n')); alert('דוח הועתק!'); };
-    window.logoClicks = 0; 
-    window.emergencyDump = () => { window.logoClicks++; clearTimeout(window.logoClickTimer); window.logoClickTimer = setTimeout(() => { window.logoClicks = 0; }, 1500); if(window.logoClicks >= 5) { window.logoClicks = 0; const a=document.createElement('a'); a.href="data:text/plain;charset=utf-8,"+encodeURIComponent("DUMP\n"+(window.DB.bugLog||[]).join('\n')); a.download="dump.txt"; a.click(); alert('דוח חולץ!'); } };
-
-    // UI
-    window.checkPin = () => { const v = document.getElementById('pinInput').value; if(btoa(v) === 'MTIzNA==') { document.getElementById('lockScreen').classList.add('hidden'); document.getElementById('loader').classList.remove('hidden'); initSync(); } else { document.getElementById('pinError').classList.remove('hidden'); document.getElementById('pinInput').value=''; } };
-    window.nav = (p) => { document.querySelectorAll('main > div:not(#alertsCenter)').forEach(e=>e.classList.add('hidden')); document.getElementById('page-'+p).classList.remove('hidden'); document.getElementById('sidebar').classList.add('translate-x-full'); document.getElementById('overlay').classList.add('hidden'); if(p==='allTasks'||p==='allFollows') window.renderFullLists(); if(p==='ops') window.renderMap(); };
-    window.toggleSidebar = () => { document.getElementById('sidebar').classList.toggle('translate-x-full'); document.getElementById('overlay').classList.toggle('hidden'); };
-    window.toggleModal = (id) => { const modal = document.getElementById(id); if(!modal) return; if(id === 'settingsModal' && modal.classList.contains('hidden')) window.renderTemplatesEditor(); document.getElementById('sidebar').classList.add('translate-x-full'); document.getElementById('overlay').classList.add('hidden'); modal.classList.toggle('hidden'); };
-
-    // FOCUS
-    window.toggleFocusMode = () => { const isFocus = document.body.classList.toggle('focus-active'); const btn = document.getElementById('btnFocus'); if(isFocus) { btn.innerText = "🔴 יציאה"; btn.classList.add('btn-focus-exit'); } else { btn.innerText = "🎯 מיקוד"; btn.classList.remove('btn-focus-exit'); } };
-
-    function initSync() {
-        onSnapshot(docRef, (snap) => {
-            document.getElementById('loader').classList.add('hidden');
-            if(snap.exists()) {
-                window.DB = {...window.DB, ...snap.data()};
-                ['contacts','tasks','courses','projects','meetings','bugLog','templates','favorites'].forEach(k => { if(!window.DB[k]) window.DB[k]=[]; });
-                window.DB.contacts.forEach(c => { if(!c.id) c.id = String(Date.now()+Math.random()); else c.id = String(c.id); });
-                window.DB.tasks.forEach(t => { if(!t.id) t.id = String(Date.now()+Math.random()); else t.id = String(t.id); });
-                window.DB_LOADED = true;
-                document.getElementById('statusInd').innerText="🟢 מחובר"; document.getElementById('statusInd').className="text-[10px] font-bold text-green-600";
-                document.getElementById('syncTime').innerText = `${new Date().toLocaleTimeString('he-IL', {hour:'2-digit', minute:'2-digit'})}`;
-                document.getElementById('upgradeNotes').value = window.DB.upgradeNotes || "";
-                updateGauge(); checkBackupGate(); renderAll(); fetchWeather();
-            }
-        }, (error) => { console.error("Firebase error:", error); document.getElementById('loader').classList.add('hidden'); alert('שגיאת חיבור. בדוק אינטרנט.'); });
-    }
-
-    window.saveData = async () => { if(!window.DB_LOADED) return; try { await setDoc(docRef, window.DB, {merge:true}); updateGauge(); } catch(e) { console.error("Save error:", e); window.onerror("Save Error", null, 0, 0, e); } };
-    function updateGauge() { try { const pct = Math.min((new Blob([JSON.stringify(window.DB)]).size / 1048576) * 100, 100); const el = document.getElementById('dbGauge'); el.innerText = `${pct.toFixed(1)}%`; el.className = pct>80 ? "text-red-500 font-bold" : "text-green-600 font-bold"; } catch(e) {} }
-    function checkBackupGate() { if (!window.DB.lastBackup || (Date.now() - window.DB.lastBackup > 86400000)) document.getElementById('backupGate').classList.remove('hidden'); else document.getElementById('backupGate').classList.add('hidden'); }
-    window.exportData = (isFromGate = false) => { try { const a=document.createElement('a'); a.href="data:text/json;charset=utf-8,"+encodeURIComponent(JSON.stringify(window.DB)); a.download=`backup_${new Date().toISOString().split('T')[0]}.json`; a.click(); window.DB.lastBackup = Date.now(); window.saveData(); if(isFromGate) document.getElementById('backupGate').classList.add('hidden'); } catch(e) { alert('שגיאה: ' + e.message); } };
-    window.importData = (input) => { const r=new FileReader(); r.onload=async(e)=>{ if(confirm('שחזור ידרוס נתונים. להמשיך?')){ try { window.DB = JSON.parse(e.target.result); window.DB.lastBackup = Date.now(); await setDoc(docRef, window.DB); location.reload(); } catch(err) { alert('שגיאה: ' + err.message); } } }; r.readAsText(input.files[0]); };
-    window.saveNotes = (val) => { window.DB.upgradeNotes = val; window.saveData(); };
-    function renderAll() { try { renderCRM(); renderCourses(); renderProjects(); renderMeetings(); renderDashboard(); renderFavorites(); } catch(e) { console.error("Render error:", e); } }
-
-    // WEATHER
-    async function fetchWeather() {
-        try {
-            const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=31.769&longitude=35.216&current_weather=true');
-            if(!res.ok) throw new Error('API failed');
-            const data = await res.json();
-            if(!data.current_weather) throw new Error('No data');
-            const temp = data.current_weather.temperature;
-            const wind = data.current_weather.windspeed;
-            document.getElementById('weatherData').innerText = `${temp}°C, רוח: ${wind} קמ"ש`;
-            document.getElementById('weatherIcon').innerText = temp > 30 ? '🔥' : (temp > 20 ? '🌤️' : '🌥️');
-        } catch(e) { 
-            console.error('Weather error:', e);
-            document.getElementById('weatherData').innerText = "לא זמין"; 
-        }
-    }
-
-    // GLOBAL COMMAND
-    window.handleGlobalCommand = (val) => {
-        const resDiv = document.getElementById('globalCommandResults');
-        if(!val || val.length < 2) { resDiv.classList.add('hidden'); return; }
-        let results = [];
-        const v = val.toLowerCase();
-        window.DB.contacts.forEach(c => { const fullName = `${c.first} ${c.last||''}`.toLowerCase(); if(fullName.includes(v)) results.push(`<div class="p-2 border-b hover:bg-slate-50 cursor-pointer text-sm" onclick="window.editCrm('${c.id}'); document.getElementById('globalCommandResults').classList.add('hidden'); document.getElementById('globalCommandInput').value='';">👤 ${c.first} ${c.last||''}</div>`); });
-        window.DB.courses.forEach(c => { if(c.name.toLowerCase().includes(v)) results.push(`<div class="p-2 border-b hover:bg-slate-50 cursor-pointer text-sm" onclick="window.nav('courses'); window.openCourseModal(${c.id}); document.getElementById('globalCommandResults').classList.add('hidden'); document.getElementById('globalCommandInput').value='';">🎓 ${c.name}</div>`); });
-        results.push(`<div class="p-2 bg-blue-50 text-blue-800 hover:bg-blue-100 cursor-pointer text-sm font-bold" onclick="document.getElementById('quickTaskText').value='${val.replace(/'/g, "\\'")}'; window.addQuickTask(); document.getElementById('globalCommandResults').classList.add('hidden'); document.getElementById('globalCommandInput').value='';">➕ הוסף: "${val}"</div>`);
-        resDiv.innerHTML = results.slice(0, 8).join('');
-        resDiv.classList.remove('hidden');
-    };
-
-    // TASKS - IMPROVED WITH RECURRING
-    window.addQuickTask = () => { 
-        let t = document.getElementById('quickTaskText').value.trim(); 
-        let d = document.getElementById('quickTaskDate').value; 
-        const recurringType = document.getElementById('quickRecurring').value;
-        if(!t) return; 
-        if(!d) d = new Date().toISOString().split('T')[0];
-        const prio = document.getElementById('quickPrio').value;
-        let icon = prio == '3' ? '🔥 ' : (prio == '2' ? '⚡ ' : '');
-        if(!t.startsWith('🔥') && !t.startsWith('⚡')) t = icon + t;
-        window.DB.tasks.push({id: String(Date.now()+Math.random()), text: t, deadline: d, priority: prio, isFollowup: (document.getElementById('quickType').value==='followup'), done: false, note: '', linkedCrm: '', linkedEntityId: null, linkedEntityType: null, recurring: recurringType !== 'none', recurringType: recurringType}); 
-        document.getElementById('quickTaskText').value=''; 
-        document.getElementById('quickTaskDate').value=''; 
-        document.getElementById('quickRecurring').value='none';
-        window.saveData(); 
-        renderAll();
-    };
-
-    function getItemsForLists() { 
-        let items = []; 
-        window.DB.tasks.forEach(x => !x.done && !x.isArchived && items.push({type:'task', obj:x, date:x.deadline?new Date(x.deadline):null})); 
-        window.DB.courses.forEach(c => !c.isArchived && (c.steps||[]).forEach((s,i) => !s.done && items.push({type:'course', obj:s, date:s.deadline?new Date(s.deadline):null, pName:c.name, pid:c.id, idx:i}))); 
-        window.DB.projects.forEach(p => !p.isArchived && (p.milestones||[]).forEach((m,i) => !m.done && items.push({type:'project', obj:m, date:m.date?new Date(m.date):null, pName:p.name, pid:p.id, idx:i}))); 
-        window.DB.meetings.forEach(m => { if(!m.isArchived) { if(m.date && new Date(m.date) >= new Date().setHours(0,0,0,0)) items.push({type:'meetingObj', obj:{text:`פגישה: ${m.name}`, note:''}, date:new Date(m.date), pid:m.id, isFollowup:true}); (m.topics||[]).forEach((t,i) => !t.done && items.push({type:'meeting', obj:t, date:null, pName:m.name, pid:m.id, idx:i, isFollowup:true})); } });
-        return items.sort((a,b) => (b.obj.priority||1)-(a.obj.priority||1) || (a.date||9999999999999)-(b.date||9999999999999)); 
-    }
-
-    function extractHashtags(items) { let tags = new Set(); items.forEach(i => { const match = (i.obj.text||i.obj.name||'').match(/#[\wא-ת]+/g); if(match) match.forEach(t=>tags.add(t)); }); return Array.from(tags); }
-
-    function renderDashboard() { 
-        const now = new Date().setHours(0,0,0,0); 
-        const limit = new Date(); 
-        limit.setDate(limit.getDate()+14); 
-        let tHtml='', fHtml=''; 
-        const items = getItemsForLists();
-        const tags = extractHashtags(items);
-        document.getElementById('hashtagFilters').innerHTML = tags.map(t => `<button onclick="window.setHashtagFilter('${t}')" class="text-xs px-3 py-1 rounded-full font-bold border transition ${window.activeHashtag===t ? 'bg-blue-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-100'}">${t}</button>`).join('') + (window.activeHashtag ? `<button onclick="window.setHashtagFilter(null)" class="text-xs px-2 py-1 text-red-500 hover:underline">✕</button>` : '');
-        items.forEach(i => { if(window.activeHashtag && !(i.obj.text||i.obj.name||'').includes(window.activeHashtag)) return; const isFollow = i.isFollowup || i.obj.isFollowup; if(!i.date || i.date <= limit || i.obj.priority==3) { const card = createCardHtml(i, now); if(isFollow) fHtml += card; else tHtml += card; } }); 
-        document.getElementById('listTasks').innerHTML = tHtml || '<div class="text-sm font-bold text-center p-6 text-slate-400">נקי! 🧹</div>'; 
-        document.getElementById('listFollowups').innerHTML = fHtml || '<div class="text-sm font-bold text-center p-6 text-slate-400">אין מעקבים</div>'; 
-        const healthContainer = document.getElementById('courseHealthBars');
-        let healthHtml = '';
-        window.DB.courses.forEach(c => { if(c.isArchived) return; const total = (c.steps||[]).length; if(total > 0) { const done = c.steps.filter(s=>s.done).length; const pct = Math.round((done/total)*100); let color = pct === 100 ? 'bg-green-500' : (pct > 50 ? 'bg-blue-500' : 'bg-orange-500'); healthHtml += `<div class="mb-2"><div class="flex justify-between text-[10px] font-bold text-slate-600 mb-1"><span>${c.name}</span><span>${pct}%</span></div><div class="w-full bg-slate-200 rounded-full h-1.5"><div class="${color} h-1.5 rounded-full" style="width: ${pct}%"></div></div></div>`; } });
-        healthContainer.innerHTML = healthHtml || '<div class="text-xs text-slate-400">אין קורסים.</div>';
-    }
-
-    window.setHashtagFilter = (tag) => { window.activeHashtag = tag; renderDashboard(); renderFullLists(); };
-    window.renderFullLists = () => { const sT = document.getElementById('searchAllTasks')?.value.toLowerCase() || ''; const sF = document.getElementById('searchAllFollows')?.value.toLowerCase() || ''; const now = new Date().setHours(0,0,0,0); let allTHtml='', allFHtml=''; getItemsForLists().forEach(i => { if(window.activeHashtag && !(i.obj.text||i.obj.name||'').includes(window.activeHashtag)) return; const isFollow = i.isFollowup || i.obj.isFollowup; const txt = (i.obj.text||i.obj.name||'').toLowerCase(); const card = createCardHtml(i, now); if(isFollow) { if(txt.includes(sF)) allFHtml += card; } else { if(txt.includes(sT)) allTHtml += card; } }); if(document.getElementById('listTasksFull')) document.getElementById('listTasksFull').innerHTML = allTHtml || '<div class="text-sm p-4">לא נמצאו</div>'; if(document.getElementById('listFollowsFull')) document.getElementById('listFollowsFull').innerHTML = allFHtml || '<div class="text-sm p-4">לא נמצאו</div>'; }
-    
-    function createCardHtml(i, now) { 
-        let badge='', diff=0; 
-        if(i.date) { diff = Math.ceil((i.date-now)/864e5); badge = diff<0 ? `<span class="text-[10px] bg-red-100 text-red-800 px-2 py-0.5 rounded font-bold">איחור ${Math.abs(diff)}d</span>` : (diff===0?`<span class="text-[10px] bg-orange-500 text-white px-2 py-0.5 rounded font-bold">היום</span>`:`<span class="text-[10px] bg-blue-100 text-blue-800 px-2 py-0.5 rounded font-bold">+${diff}d</span>`); } 
-        let entName = i.pName; 
-        if(i.type === 'task' && i.obj.linkedEntityType) { if(i.obj.linkedEntityType === 'course') { const c=window.DB.courses.find(x=>x.id==i.obj.linkedEntityId); if(c) entName = c.name; } if(i.obj.linkedEntityType === 'project') { const p=window.DB.projects.find(x=>x.id==i.obj.linkedEntityId); if(p) entName = p.name; } } 
-        const icon = (i.type==='meeting'||i.type==='meetingObj')?'🤝':(i.type==='project'||i.obj.linkedEntityType==='project'?'🏗️':(i.type==='course'||i.obj.linkedEntityType==='course'?'🎓':'📝')); 
-        const ctx = entName ? `<div class="text-[10px] text-slate-600 bg-slate-200 px-2 py-0.5 rounded font-bold inline-block mb-1">${icon} ${entName}</div>` : ''; 
-        const crmLnk = i.obj.linkedCrm ? `<span class="text-[10px] text-purple-700 bg-purple-100 px-2 py-0.5 rounded font-bold ml-1">${i.obj.linkedCrm}</span>` : ''; 
-        const recurringIcon = (i.obj.recurring && i.obj.recurringType && i.obj.recurringType !== 'none') ? `<span class="text-[10px] bg-blue-100 text-blue-700 px-1 rounded ml-1" title="${i.obj.recurringType}">🔄</span>` : '';
-        const idStr = `'${i.type}', '${i.type==='task'?i.obj.id:i.pid}', ${i.idx||0}`; 
-        let commBtns = ''; 
-        if(i.obj.linkedCrm) { const firstContact = i.obj.linkedCrm.split(',')[0].trim(); const subj = (i.obj.text||i.obj.name).replace(/'/g,"\\'"); commBtns = `<button onclick="window.prepareWaMessage('${firstContact}', '${subj}')" class="text-sm bg-green-100 hover:bg-green-200 text-green-700 p-2 rounded btn">💬</button><button onclick="window.commAction('email', '${firstContact}', '${subj}')" class="text-sm bg-blue-100 hover:bg-blue-200 text-blue-700 p-2 rounded btn">📧</button><button onclick="window.commAction('ics', '${firstContact}', '${subj}')" class="text-sm bg-orange-100 hover:bg-orange-200 text-orange-700 p-2 rounded btn">📅</button>`; } 
-        let logHtml = '';
-        if(i.obj.note) logHtml = `<div class="w-full text-[11px] text-slate-500 bg-slate-50 p-2 rounded mt-2 max-h-24 overflow-y-auto log-scroll border">${i.obj.note}</div>`;
-        if(i.type === 'meetingObj') return `<div class="p-3 border-b border-cyan-200 bg-cyan-50 flex justify-between items-center gap-2 shadow-sm mb-1 rounded"><div class="font-bold text-[14px] text-cyan-900">${icon} ${i.obj.text}</div>${badge}</div>`;
-        return `<div class="p-3 border-b bg-white hover:bg-slate-50 prio-${i.obj.priority||1} flex flex-col md:flex-row md:items-center justify-between gap-3 transition shadow-sm mb-1 rounded"><div class="flex items-start gap-3 w-full flex-1"><input type="checkbox" onchange="window.tglItem(${idStr})" class="w-5 h-5 mt-0.5 accent-green-600 cursor-pointer"><div class="flex-1">${ctx}${recurringIcon}${crmLnk}<div class="font-bold text-[15px] leading-tight text-slate-800 mt-1">${i.obj.text||i.obj.name}</div><div class="flex items-center gap-2 mt-2 text-xs font-bold text-slate-500 flex-wrap"><span class="cursor-pointer hover:text-blue-700 bg-slate-100 px-2 py-1 rounded btn" onclick="window.openLinkModal(${idStr})">🔗</span><span class="cursor-pointer hover:text-orange-600 bg-slate-100 px-2 py-1 rounded btn" onclick="window.switchFollow(${idStr})">⮀</span></div>${logHtml}</div></div><div class="flex items-center gap-2 justify-between w-full md:w-auto flex-wrap"><div class="flex gap-1">${commBtns}</div>${badge}<div class="flex gap-1 items-center"><button onclick="window.snoozeItem(${idStr})" class="bg-slate-200 font-bold text-slate-700 px-3 py-2 rounded text-xs btn">+1</button><input class="text-xs font-bold bg-yellow-50 border rounded w-32 px-2 py-2" placeholder="הערה..." onchange="window.updateGlobalNote(${idStr}, this.value)"></div></div></div>`; 
-    }
-
-    window.tglItem = (t, pid, idx) => { 
-        try {
-            if(t==='task') {
-                let task = window.DB.tasks.find(x=>x.id===pid);
-                if(!task) return;
-                task.done = true;
-                if(task.recurring && task.recurringType && task.recurringType !== 'none' && task.deadline) {
-                    let d = new Date(task.deadline);
-                    switch(task.recurringType) {
-                        case 'daily': d.setDate(d.getDate() + 1); break;
-                        case 'weekly': d.setDate(d.getDate() + 7); break;
-                        case 'monthly': d.setMonth(d.getMonth() + 1); break;
-                    }
-                    window.DB.tasks.push({...task, id: String(Date.now() + Math.random()), done: false, deadline: d.toISOString().split('T')[0], note: ''});
-                }
+        window.logoClicks = 0; window.logoClickTimer = null; 
+        window.emergencyDump = () => { 
+            window.logoClicks++; 
+            clearTimeout(window.logoClickTimer); 
+            window.logoClickTimer = setTimeout(() => { window.logoClicks = 0; }, 1500); 
+            if(window.logoClicks >= 5) { 
+                window.logoClicks = 0; 
+                const a = document.createElement('a'); 
+                a.href = "data:text/plain;charset=utf-8," + encodeURIComponent("DUMP\n" + (window.DB.bugLog||[]).join('\n')); 
+                a.download = "dump.txt"; 
+                a.click(); 
+                alert('דוח חירום חולץ!'); 
             } 
-            else if(t==='course') window.DB.courses.find(x=>String(x.id)===String(pid)).steps[idx].done = true; 
-            else if(t==='project') window.DB.projects.find(x=>String(x.id)===String(pid)).milestones[idx].done = true; 
-            else if(t==='meeting') window.DB.meetings.find(x=>String(x.id)===String(pid)).topics[idx].done = true; 
+        };
+
+        // ==========================================
+        // 3. UI & NAVIGATION
+        // ==========================================
+        window.checkPin = () => { 
+            const v = document.getElementById('pinInput').value; 
+            if(btoa(v) === 'MTIzNA==') { 
+                document.getElementById('lockScreen').classList.add('hidden'); 
+                document.getElementById('loader').classList.remove('hidden'); 
+                initSync(); 
+            } else { 
+                document.getElementById('pinError').classList.remove('hidden'); 
+                document.getElementById('pinInput').value = ''; 
+            } 
+        };
+
+        window.nav = (p) => { 
+            document.querySelectorAll('main > div:not(#alertsCenter)').forEach(e => e.classList.add('hidden')); 
+            document.getElementById('page-'+p).classList.remove('hidden'); 
+            document.getElementById('sidebar').classList.add('translate-x-full'); 
+            document.getElementById('overlay').classList.add('hidden'); 
+            if(p === 'allTasks' || p === 'allFollows') window.renderFullLists(); 
+            if(p === 'ops') window.renderMap(); 
+        };
+
+        window.toggleSidebar = () => { 
+            document.getElementById('sidebar').classList.toggle('translate-x-full'); 
+            document.getElementById('overlay').classList.toggle('hidden'); 
+        };
+
+        window.toggleModal = (id) => { 
+            const modal = document.getElementById(id); 
+            if(!modal) return; 
+            if(id === 'settingsModal' && modal.classList.contains('hidden')) {
+                window.renderTemplatesEditor(); 
+            }
+            document.getElementById('sidebar').classList.add('translate-x-full'); 
+            document.getElementById('overlay').classList.add('hidden'); 
+            modal.classList.toggle('hidden'); 
+        };
+
+        // שמירת מצב האקורדיון (תפריטים נפתחים בקורסים/פרויקטים)
+        window.toggleAccordion = (id) => {
+            const el = document.getElementById(id);
+            if(el.classList.contains('hidden')) {
+                el.classList.remove('hidden');
+                window.openAccordions.add(id);
+            } else {
+                el.classList.add('hidden');
+                window.openAccordions.delete(id);
+            }
+        };
+
+        // FOCUS MODE
+        window.toggleFocusMode = () => { 
+            const isFocus = document.body.classList.toggle('focus-active'); 
+            const btn = document.getElementById('btnFocus'); 
+            if(isFocus) { 
+                btn.innerHTML = "🔴 יציאה ממיקוד"; 
+                btn.classList.add('btn-focus-exit'); 
+            } else { 
+                btn.innerHTML = "🎯 מיקוד"; 
+                btn.classList.remove('btn-focus-exit'); 
+            } 
+        };
+
+        // ==========================================
+        // 4. FIREBASE SYNC
+        // ==========================================
+        function initSync() {
+            onSnapshot(docRef, (snap) => {
+                document.getElementById('loader').classList.add('hidden');
+                if(snap.exists()) {
+                    window.DB = {...window.DB, ...snap.data()};
+                    
+                    // Arrays Safety
+                    ['contacts','tasks','courses','projects','meetings','bugLog','templates','favorites'].forEach(k => { 
+                        if(!window.DB[k]) window.DB[k] = []; 
+                    });
+                    
+                    // ID Assurance
+                    window.DB.contacts.forEach(c => { if(!c.id) c.id = String(Date.now() + Math.random()); else c.id = String(c.id); });
+                    window.DB.tasks.forEach(t => { if(!t.id) t.id = String(Date.now() + Math.random()); else t.id = String(t.id); });
+                    
+                    window.DB_LOADED = true;
+                    document.getElementById('statusInd').innerText = "🟢 מחובר ופעיל"; 
+                    document.getElementById('statusInd').className = "text-[10px] font-bold text-green-600";
+                    document.getElementById('syncTime').innerText = `${new Date().toLocaleTimeString('he-IL', {hour:'2-digit', minute:'2-digit'})}`;
+                    document.getElementById('upgradeNotes').value = window.DB.upgradeNotes || "";
+                    
+                    updateGauge(); 
+                    checkBackupGate(); 
+                    renderAll(); 
+                    fetchWeather();
+                }
+            }, (error) => { 
+                console.error("Firebase error:", error); 
+                document.getElementById('loader').classList.add('hidden'); 
+                alert('שגיאת חיבור לענן. בדוק אינטרנט.'); 
+            });
+        }
+
+        window.saveData = async () => { 
+            if(!window.DB_LOADED) return; 
+            try { 
+                await setDoc(docRef, window.DB, {merge: true}); 
+                updateGauge(); 
+            } catch(e) { 
+                console.error("Save error:", e); 
+                window.onerror("Save Error", null, 0, 0, e); 
+            } 
+        };
+
+        function updateGauge() { 
+            try { 
+                const pct = Math.min((new Blob([JSON.stringify(window.DB)]).size / 1048576) * 100, 100); 
+                const el = document.getElementById('dbGauge'); 
+                el.innerText = `${pct.toFixed(1)}%`; 
+                el.className = pct > 80 ? "text-red-500 font-bold" : "text-slate-500 font-bold"; 
+            } catch(e) {} 
+        }
+
+        function checkBackupGate() { 
+            if (!window.DB.lastBackup || (Date.now() - window.DB.lastBackup > 86400000)) {
+                document.getElementById('backupGate').classList.remove('hidden'); 
+            } else {
+                document.getElementById('backupGate').classList.add('hidden'); 
+            }
+        }
+
+        window.exportData = (isFromGate = false) => { 
+            try { 
+                const a = document.createElement('a'); 
+                a.href = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(window.DB)); 
+                a.download = `backup_ops_${new Date().toISOString().split('T')[0]}.json`; 
+                a.click(); 
+                window.DB.lastBackup = Date.now(); 
+                window.saveData(); 
+                if(isFromGate) document.getElementById('backupGate').classList.add('hidden'); 
+            } catch(e) { alert('שגיאה: ' + e.message); } 
+        };
+
+        window.importData = (input) => { 
+            const r = new FileReader(); 
+            r.onload = async(e) => { 
+                if(confirm('שחזור ימחוק נתונים קיימים. להמשיך?')){ 
+                    try { 
+                        window.DB = JSON.parse(e.target.result); 
+                        window.DB.lastBackup = Date.now(); 
+                        await setDoc(docRef, window.DB); 
+                        location.reload(); 
+                    } catch(err) { alert('שגיאת קובץ: ' + err.message); } 
+                } 
+            }; 
+            r.readAsText(input.files[0]); 
+        };
+
+        window.saveNotes = (val) => { window.DB.upgradeNotes = val; window.saveData(); };
+        
+        function renderAll() { 
+            try { 
+                renderCRM(); 
+                renderCourses(); 
+                renderProjects(); 
+                renderMeetings(); 
+                renderDashboard(); 
+                renderFavorites(); 
+            } catch(e) { console.error("Render error:", e); } 
+        }
+
+        // ==========================================
+        // 5. MODULAR RESET
+        // ==========================================
+        window.modularReset = (module) => {
+            let msg = '';
+            if(module === 'tasks') msg = 'האם אתה בטוח שברצונך למחוק את *כל* המשימות והמעקבים?';
+            if(module === 'meetings') msg = 'האם אתה בטוח שברצונך למחוק את *כל* הפגישות?';
+            if(module === 'projects') msg = 'האם אתה בטוח שברצונך למחוק את *כל* הפרויקטים?';
+            
+            if(confirm(msg)) {
+                window.DB[module] = [];
+                window.saveData();
+                renderAll();
+                alert('המודול אופס בהצלחה.');
+            }
+        };
+
+        // ==========================================
+        // 6. WEATHER WIDGET & GLOBAL COMMAND
+        // ==========================================
+        async function fetchWeather() {
+            try {
+                const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=31.769&longitude=35.216&current_weather=true');
+                if(!res.ok) throw new Error('API failed');
+                const data = await res.json();
+                if(!data.current_weather) throw new Error('No data');
+                const temp = data.current_weather.temperature;
+                const wind = data.current_weather.windspeed;
+                document.getElementById('weatherData').innerText = `${temp}°C, רוח: ${wind} קמ"ש`;
+                document.getElementById('weatherIcon').innerText = temp > 30 ? '🔥' : (temp > 20 ? '🌤️' : '🌥️');
+            } catch(e) { 
+                document.getElementById('weatherData').innerText = "לא זמין כרגע"; 
+            }
+        }
+
+        window.handleGlobalCommand = (val) => {
+            const resDiv = document.getElementById('globalCommandResults');
+            if(!val || val.length < 2) { resDiv.classList.add('hidden'); return; }
+            let results = [];
+            const v = val.toLowerCase();
+            
+            window.DB.contacts.forEach(c => { 
+                const fullName = `${c.first} ${c.last||''}`.toLowerCase(); 
+                if(fullName.includes(v)) {
+                    results.push(`<div class="p-2 border-b hover:bg-slate-50 cursor-pointer text-sm" onclick="window.editCrm('${c.id}'); document.getElementById('globalCommandResults').classList.add('hidden'); document.getElementById('globalCommandInput').value='';">👤 ${c.first} ${c.last||''} (ערוך איש קשר)</div>`); 
+                }
+            });
+            
+            window.DB.courses.forEach(c => { 
+                if(c.name.toLowerCase().includes(v)) {
+                    results.push(`<div class="p-2 border-b hover:bg-slate-50 cursor-pointer text-sm" onclick="window.nav('courses'); window.openCourseModal(${c.id}); document.getElementById('globalCommandResults').classList.add('hidden'); document.getElementById('globalCommandInput').value='';">🎓 ${c.name} (ערוך קורס)</div>`); 
+                }
+            });
+            
+            results.push(`<div class="p-3 bg-blue-50 text-blue-800 hover:bg-blue-100 cursor-pointer text-sm font-bold" onclick="document.getElementById('quickTaskText').value='${val.replace(/'/g, "\\'")}'; window.addQuickTask(); document.getElementById('globalCommandResults').classList.add('hidden'); document.getElementById('globalCommandInput').value='';">➕ הוסף כמשימה מהירה: "${val}"</div>`);
+            
+            resDiv.innerHTML = results.slice(0, 8).join('');
+            resDiv.classList.remove('hidden');
+        };
+
+        // ==========================================
+        // 7. DRAG & DROP LOGIC
+        // ==========================================
+        window.dragStart = (e, id) => {
+            e.dataTransfer.setData('text/plain', id);
+            e.target.style.opacity = '0.5';
+        };
+        
+        window.dragEnd = (e) => {
+            e.target.style.opacity = '1';
+            document.querySelectorAll('.draggable-item').forEach(el => el.classList.remove('drag-over'));
+        };
+        
+        window.dragOver = (e) => {
+            e.preventDefault();
+            const target = e.target.closest('.draggable-item');
+            if(target) target.classList.add('drag-over');
+        };
+        
+        window.dragLeave = (e) => {
+            const target = e.target.closest('.draggable-item');
+            if(target) target.classList.remove('drag-over');
+        };
+
+        window.dropTask = (e, targetId) => {
+            e.preventDefault();
+            document.querySelectorAll('.draggable-item').forEach(el => el.classList.remove('drag-over'));
+            const sourceId = e.dataTransfer.getData('text/plain');
+            if(sourceId === targetId) return;
+            
+            const srcIdx = window.DB.tasks.findIndex(t => t.id === sourceId);
+            const tgtIdx = window.DB.tasks.findIndex(t => t.id === targetId);
+            
+            if(srcIdx > -1 && tgtIdx > -1) {
+                const [movedItem] = window.DB.tasks.splice(srcIdx, 1);
+                window.DB.tasks.splice(tgtIdx, 0, movedItem);
+                window.saveData();
+                renderDashboard();
+            }
+        };
+
+        // ==========================================
+        // 8. TASKS & DASHBOARD ENGINE
+        // ==========================================
+        window.addQuickTask = () => { 
+            let t = document.getElementById('quickTaskText').value.trim(); 
+            let d = document.getElementById('quickTaskDate').value; 
+            const recurringType = document.getElementById('quickRecurring').value;
+            
+            if(!t) return; 
+            
+            // תאריך אוטומטי להיום אם ריק
+            if(!d) d = new Date().toISOString().split('T')[0];
+            
+            // סמלי דחיפות
+            const prio = document.getElementById('quickPrio').value;
+            let icon = prio == '3' ? '🔥 ' : (prio == '2' ? '⚡ ' : '');
+            if(!t.startsWith('🔥') && !t.startsWith('⚡')) t = icon + t;
+
+            window.DB.tasks.push({
+                id: String(Date.now() + Math.random()), 
+                text: t, 
+                deadline: d, 
+                priority: prio, 
+                isFollowup: (document.getElementById('quickType').value === 'followup'), 
+                done: false, 
+                note: '', 
+                linkedCrm: '', 
+                linkedEntityId: null, 
+                linkedEntityType: null, 
+                recurring: recurringType !== 'none', 
+                recurringType: recurringType
+            }); 
+            
+            document.getElementById('quickTaskText').value = ''; 
+            document.getElementById('quickTaskDate').value = ''; 
+            document.getElementById('quickRecurring').value = 'none';
+            
             window.saveData(); 
             renderAll();
-        } catch(e) { console.error('Toggle error:', e); }
-    };
-    
-    window.switchFollow = (t,pid) => { if(t==='task') { let i=window.DB.tasks.find(x=>x.id===pid); if(i) { i.isFollowup = !i.isFollowup; window.saveData(); renderDashboard(); renderFullLists(); } } else alert("רק למשימות."); };
-    window.updateGlobalNote = (type, pid, idx, val) => { if(!val.trim()) return; const timeStr = `[${new Date().toHours().toString().padStart(2,'0')}:${new Date().getMinutes().toString().padStart(2,'0')}]`; let entry = `<b>${timeStr}</b> ${val}<br>`; try { if(type==='task') { let t = window.DB.tasks.find(x=>x.id===pid); if(t) t.note = (t.note||'') + entry; } else if(type==='course') { let c = window.DB.courses.find(x=>String(x.id)===String(pid)); if(c && c.steps[idx]) c.steps[idx].note = (c.steps[idx].note||'') + entry; } else if(type==='project') { let p = window.DB.projects.find(x=>String(x.id)===String(pid)); if(p && p.milestones[idx]) p.milestones[idx].note = (p.milestones[idx].note||'') + entry; } else if(type==='meeting') { let m = window.DB.meetings.find(x=>String(x.id)===String(pid)); if(m && m.topics[idx]) m.topics[idx].note = (m.topics[idx].note||'') + entry; } window.saveData(); renderAll(); } catch(e) {} };
-    window.snoozeItem = (t, pid, idx) => { const addD = (d) => { const x = d?new Date(d):new Date(); x.setDate(x.getDate()+1); return x.toISOString().split('T')[0]; }; try { if(t==='task') { let x=window.DB.tasks.find(y=>y.id===pid); if(x) x.deadline = addD(x.deadline); } else if(t==='course') { let c=window.DB.courses.find(y=>String(y.id)===String(pid)); if(c && c.steps[idx]) c.steps[idx].deadline = addD(c.steps[idx].deadline); } else if(t==='project') { let p=window.DB.projects.find(y=>String(y.id)===String(pid)); if(p && p.milestones[idx]) p.milestones[idx].date = addD(p.milestones[idx].date); } window.saveData(); renderAll(); } catch(e) {} };
+        };
 
-    // LINK MODAL
-    window.renderLinkCrmSelect = () => { document.getElementById('linkCrmCheckboxes').innerHTML = window.generateCrmCheckboxesHtml('link-crm-chk'); };
-    window.openLinkModal = (t, pid, idx) => { document.getElementById('linkTaskType').value = t; document.getElementById('linkTaskId').value = pid; document.getElementById('linkTaskIdx').value = idx; window.renderLinkCrmSelect(); document.getElementById('linkCrmFilter').value = ''; const sel = document.getElementById('linkTaskEntity'); sel.innerHTML = '<option value="">-- ללא --</option>'; if(t === 'task') { sel.disabled = false; window.DB.courses.filter(c=>!c.isArchived).forEach(c => sel.innerHTML += `<option value="course_${c.id}">🎓 ${c.name}</option>`); window.DB.projects.filter(p=>!p.isArchived).forEach(p => sel.innerHTML += `<option value="project_${p.id}">🏗️ ${p.name}</option>`); } else { sel.disabled = true; } let obj = null, dVal = ''; if(t==='task') { obj=window.DB.tasks.find(x=>x.id===pid); if(obj) { dVal=obj.deadline; document.getElementById('linkTaskRecurringType').value = obj.recurringType || 'none'; if(obj.linkedEntityType) sel.value=`${obj.linkedEntityType}_${obj.linkedEntityId}`; } } else if(t==='course') { obj=window.DB.courses.find(x=>String(x.id)===String(pid))?.steps[idx]; if(obj) dVal=obj.deadline; } else if(t==='project') { obj=window.DB.projects.find(x=>String(x.id)===String(pid))?.milestones[idx]; if(obj) dVal=obj.date; } else if(t==='meeting') { obj=window.DB.meetings.find(x=>String(x.id)===String(pid))?.topics[idx]; } if(obj) { if(obj.linkedCrm) { const linkedNames = obj.linkedCrm.split(',').map(n => n.trim()); setTimeout(() => { document.querySelectorAll('.link-crm-chk').forEach(cb => { if(linkedNames.includes(cb.value)) cb.checked = true; }); }, 100); } document.getElementById('linkTaskDate').value = dVal ? new Date(dVal).toISOString().split('T')[0] : ''; window.toggleModal('linkModal'); } };
-    window.saveTaskLinks = () => { const t = document.getElementById('linkTaskType').value; const pid = document.getElementById('linkTaskId').value; const idx = document.getElementById('linkTaskIdx').value; const d = document.getElementById('linkTaskDate').value; const ent = document.getElementById('linkTaskEntity').value; const recType = document.getElementById('linkTaskRecurringType').value; let selectedCrms = []; document.querySelectorAll('.link-crm-chk:checked').forEach(cb => selectedCrms.push(cb.value)); const crmFinal = selectedCrms.join(', '); const isoD = d ? new Date(d).toISOString().split('T')[0] : null; try { if(t==='task') { let x = window.DB.tasks.find(y=>y.id===pid); if(x) { x.linkedCrm = crmFinal; x.deadline = isoD; x.recurring = recType !== 'none'; x.recurringType = recType; if(ent) { const parts = ent.split('_'); x.linkedEntityType = parts[0]; x.linkedEntityId = parseInt(parts[1]); } else { x.linkedEntityType = null; x.linkedEntityId = null; } } } else if(t==='course') { let c = window.DB.courses.find(y=>String(y.id)===String(pid)); if(c && c.steps[idx]) { c.steps[idx].linkedCrm = crmFinal; c.steps[idx].deadline = isoD; } } else if(t==='project') { let p = window.DB.projects.find(y=>String(y.id)===String(pid)); if(p && p.milestones[idx]) { p.milestones[idx].linkedCrm = crmFinal; p.milestones[idx].date = isoD; } } else if(t==='meeting') { let m = window.DB.meetings.find(y=>String(y.id)===String(pid)); if(m && m.topics[idx]) { m.topics[idx].linkedCrm = crmFinal; } } window.saveData(); window.toggleModal('linkModal'); renderAll(); } catch(e) { alert('שגיאה: ' + e.message); } };
+        function getItemsForLists() { 
+            let items = []; 
+            // Tasks
+            window.DB.tasks.forEach(x => !x.done && !x.isArchived && items.push({type:'task', obj:x, date:x.deadline?new Date(x.deadline):null})); 
+            
+            // Courses
+            window.DB.courses.forEach(c => !c.isArchived && (c.steps||[]).forEach((s,i) => !s.done && items.push({type:'course', obj:s, date:s.deadline?new Date(s.deadline):null, pName:c.name, pid:c.id, idx:i}))); 
+            
+            // Projects
+            window.DB.projects.forEach(p => !p.isArchived && (p.milestones||[]).forEach((m,i) => !m.done && items.push({type:'project', obj:m, date:m.date?new Date(m.date):null, pName:p.name, pid:p.id, idx:i}))); 
+            
+            // Meetings
+            window.DB.meetings.forEach(m => { 
+                if(!m.isArchived) { 
+                    if(m.date && new Date(m.date) >= new Date().setHours(0,0,0,0)) {
+                        items.push({type:'meetingObj', obj:{text:`פגישה מתוכננת: ${m.name}`, note:''}, date:new Date(m.date), pid:m.id, isFollowup:true});
+                    }
+                    (m.topics||[]).forEach((t,i) => !t.done && items.push({type:'meeting', obj:t, date:null, pName:m.name, pid:m.id, idx:i, isFollowup:true})); 
+                } 
+            });
+            
+            // Sort logic: First by priority, then by date. 
+            // Note: Since manual dragging changes the array, we map task array index for tie-breakers if priorities are same.
+            return items.sort((a,b) => {
+                if(a.type === 'task' && b.type === 'task') {
+                    const pDiff = (b.obj.priority||1) - (a.obj.priority||1);
+                    if(pDiff !== 0) return pDiff;
+                    // If priorities are the same, rely on the array index to maintain drag-and-drop order
+                    const aIdx = window.DB.tasks.findIndex(t => t.id === a.obj.id);
+                    const bIdx = window.DB.tasks.findIndex(t => t.id === b.obj.id);
+                    return aIdx - bIdx;
+                }
+                return (b.obj.priority||1) - (a.obj.priority||1) || (a.date||9999999999999) - (b.date||9999999999999);
+            }); 
+        }
 
-    // WHATSAPP
-    window.pendingWaPhone = '';
-    window.prepareWaMessage = (contactName, defaultText) => { const c = window.DB.contacts.find(x => `${x.first} ${x.last||''}`.trim() === contactName.trim()); if(!c) return alert('לא נמצא.'); if(!c.phone) return alert('חסר טלפון.'); window.pendingWaPhone = c.phone.replace(/^0/, '').replace(/[^0-9]/g, ''); document.getElementById('waPreviewTarget').innerText = `${contactName} (${c.phone})`; document.getElementById('waPreviewText').value = defaultText; document.getElementById('btnSendWaFinal').onclick = () => { const txt = document.getElementById('waPreviewText').value; window.open(`https://wa.me/972${window.pendingWaPhone}?text=${encodeURIComponent(txt)}`); window.toggleModal('waPreviewModal'); }; window.toggleModal('waPreviewModal'); };
-    window.commAction = (method, contactName, subjectText) => { const c = window.DB.contacts.find(x => `${x.first} ${x.last||''}`.trim() === contactName.trim()); if(!c) return alert('לא קיים.'); if(method === 'email') { if(!c.email) return alert('חסר מייל.'); window.open(`mailto:${c.email}?subject=${encodeURIComponent(subjectText)}`); } else if(method === 'ics') { let emailStr = (c && c.email) ? `\nATTENDEE;CN="${contactName}":mailto:${c.email}` : ''; const now = new Date(); const start = now.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z'; now.setHours(now.getHours()+1); const end = now.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z'; const icsData = `BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nUID:${Date.now()}@ops\nDTSTAMP:${start}\nDTSTART:${start}\nDTEND:${end}\nSUMMARY:${subjectText}${emailStr}\nEND:VEVENT\nEND:VCALENDAR`.replace(/\n/g, "\r\n"); const blob = new Blob([icsData], { type: 'text/calendar' }); const link = document.createElement('a'); link.href = window.URL.createObjectURL(blob); link.download = `meeting.ics`; link.click(); } };
+        function extractHashtags(items) { 
+            let tags = new Set(); 
+            items.forEach(i => { 
+                const match = (i.obj.text || i.obj.name || '').match(/#[\wא-ת]+/g); 
+                if(match) match.forEach(t => tags.add(t)); 
+            }); 
+            return Array.from(tags); 
+        }
 
-    // FAVORITES
-    window.renderFavorites = () => { const panel = document.getElementById('favoritesPanel'); if(!window.DB.favorites || window.DB.favorites.length === 0) { panel.innerHTML = '<div class="col-span-2 text-xs text-slate-400">אין. לחץ "נהל".</div>'; return; } panel.innerHTML = window.DB.favorites.map(fName => { const c = window.DB.contacts.find(x => `${x.first} ${x.last||''}`.trim() === fName); if(!c) return ''; return `<div class="bg-indigo-50 border p-2 rounded flex justify-between items-center shadow-sm hover:bg-indigo-100"><div><span class="font-bold text-sm text-indigo-900">${fName}</span><div class="text-[10px] text-indigo-600">${c.role||'--'}</div></div><button onclick="window.prepareWaMessage('${fName}', 'היי ${c.first},')" class="bg-green-500 text-white w-7 h-7 rounded-full text-xs btn">💬</button></div>`; }).join(''); };
-    window.openFavoritesManager = () => { const container = document.getElementById('favCrmCheckboxes'); container.innerHTML = window.generateCrmCheckboxesHtml('fav-crm-chk'); setTimeout(() => { document.querySelectorAll('.fav-crm-chk').forEach(cb => { if(window.DB.favorites && window.DB.favorites.includes(cb.value)) cb.checked = true; }); }, 100); window.toggleModal('favoritesModal'); };
-    window.saveFavorites = () => { window.DB.favorites = []; document.querySelectorAll('.fav-crm-chk:checked').forEach(cb => window.DB.favorites.push(cb.value)); window.saveData(); window.toggleModal('favoritesModal'); renderFavorites(); };
+        function renderDashboard() { 
+            const now = new Date().setHours(0,0,0,0); 
+            const limit = new Date(); limit.setDate(limit.getDate() + 14); 
+            let tHtml = '', fHtml = ''; 
+            const items = getItemsForLists();
+            
+            // HashTags
+            const tags = extractHashtags(items);
+            document.getElementById('hashtagFilters').innerHTML = tags.map(t => `<button onclick="window.setHashtagFilter('${t}')" class="text-xs px-3 py-1 rounded-full font-bold border transition ${window.activeHashtag===t ? 'bg-blue-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-100 shadow-sm'}">${t}</button>`).join('') + (window.activeHashtag ? `<button onclick="window.setHashtagFilter(null)" class="text-xs px-3 py-1 text-red-500 font-bold bg-red-50 hover:bg-red-100 rounded-full">✕ נקה סינון</button>` : '');
+            
+            // Cards
+            items.forEach(i => { 
+                if(window.activeHashtag && !(i.obj.text||i.obj.name||'').includes(window.activeHashtag)) return; 
+                
+                const isFollow = i.isFollowup || i.obj.isFollowup; 
+                if(!i.date || i.date <= limit || i.obj.priority == 3) { 
+                    const card = createCardHtml(i, now); 
+                    if(isFollow) fHtml += card; else tHtml += card; 
+                } 
+            }); 
+            
+            document.getElementById('listTasks').innerHTML = tHtml || '<div class="text-sm font-bold text-center p-6 text-slate-400">השולחן נקי! 🧹</div>'; 
+            document.getElementById('listFollowups').innerHTML = fHtml || '<div class="text-sm font-bold text-center p-6 text-slate-400">אין מעקבים</div>'; 
+            
+            // Health Bars
+            const healthContainer = document.getElementById('courseHealthBars');
+            let healthHtml = '';
+            window.DB.courses.forEach(c => { 
+                if(c.isArchived) return; 
+                const total = (c.steps||[]).length; 
+                if(total > 0) { 
+                    const done = c.steps.filter(s=>s.done).length; 
+                    const pct = Math.round((done/total)*100); 
+                    let color = pct === 100 ? 'bg-green-500' : (pct > 50 ? 'bg-blue-500' : 'bg-orange-500'); 
+                    healthHtml += `<div class="mb-3"><div class="flex justify-between text-[11px] font-bold text-slate-600 mb-1"><span>${c.name}</span><span>${pct}%</span></div><div class="w-full bg-slate-200 rounded-full h-2"><div class="${color} h-2 rounded-full transition-all duration-500" style="width: ${pct}%"></div></div></div>`; 
+                } 
+            });
+            healthContainer.innerHTML = healthHtml || '<div class="text-xs text-slate-400">אין הכשרות.</div>';
+        }
 
-    // CRM CORE (CRITICAL FUNCTIONS - FIXED!)
-    window.generateCrmCheckboxesHtml = (className) => { if(!window.DB.contacts || window.DB.contacts.length === 0) return '<div class="text-xs text-slate-400 p-2">אין. הוסף תחילה.</div>'; return window.DB.contacts.sort((a, b) => { const nameA = `${a.first} ${a.last||''}`.trim(); const nameB = `${b.first} ${b.last||''}`.trim(); return nameA.localeCompare(nameB, 'he'); }).map(c => { const fullName = `${c.first} ${c.last||''}`.trim(); return `<label class="flex items-center gap-2 p-1 hover:bg-slate-50 rounded cursor-pointer"><input type="checkbox" class="${className}" value="${fullName}"><span class="text-sm">${fullName}${c.role ? ' - ' + c.role : ''}</span></label>`; }).join(''); };
-    window.filterCrmList = (inputId, listId) => { const val = document.getElementById(inputId).value.toLowerCase(); const container = document.getElementById(listId); if(!container) return; container.querySelectorAll('label').forEach(label => { label.style.display = label.innerText.toLowerCase().includes(val) ? '' : 'none'; }); };
-    window.quickAddCrmFromModal = (inputId, callback) => { const name = document.getElementById(inputId).value.trim(); if(!name) return; const parts = name.split(' '); const newContact = {id: String(Date.now() + Math.random()), first: parts[0], last: parts.slice(1).join(' '), role: '', dist: '', stat: '', phone: '', email: ''}; window.DB.contacts.push(newContact); window.saveData(); window.pendingLinkCrmName = `${newContact.first} ${newContact.last}`.trim(); window.pendingCrmCallback = callback; if(callback) callback(); document.getElementById(inputId).value = ''; };
+        window.setHashtagFilter = (tag) => { window.activeHashtag = tag; renderDashboard(); renderFullLists(); };
+        
+        window.renderFullLists = () => { 
+            const sT = document.getElementById('searchAllTasks')?.value.toLowerCase() || ''; 
+            const sF = document.getElementById('searchAllFollows')?.value.toLowerCase() || ''; 
+            const now = new Date().setHours(0,0,0,0); 
+            let allTHtml='', allFHtml=''; 
+            
+            getItemsForLists().forEach(i => { 
+                if(window.activeHashtag && !(i.obj.text||i.obj.name||'').includes(window.activeHashtag)) return; 
+                const isFollow = i.isFollowup || i.obj.isFollowup; 
+                const txt = (i.obj.text||i.obj.name||'').toLowerCase(); 
+                const card = createCardHtml(i, now); 
+                if(isFollow) { 
+                    if(txt.includes(sF)) allFHtml += card; 
+                } else { 
+                    if(txt.includes(sT)) allTHtml += card; 
+                } 
+            }); 
+            
+            if(document.getElementById('listTasksFull')) document.getElementById('listTasksFull').innerHTML = allTHtml || '<div class="text-sm p-4">לא נמצאו</div>'; 
+            if(document.getElementById('listFollowsFull')) document.getElementById('listFollowsFull').innerHTML = allFHtml || '<div class="text-sm p-4">לא נמצאו</div>'; 
+        }
+        
+        function createCardHtml(i, now) { 
+            let badge='', diff=0; 
+            if(i.date) { 
+                diff = Math.ceil((i.date-now)/864e5); 
+                badge = diff<0 ? `<span class="text-[10px] bg-red-100 text-red-800 px-2 py-1 rounded font-bold">איחור ${Math.abs(diff)} ימים</span>` : (diff===0?`<span class="text-[10px] bg-orange-500 text-white px-2 py-1 rounded font-bold">היום</span>`:`<span class="text-[10px] bg-blue-100 text-blue-800 px-2 py-1 rounded font-bold">עוד ${diff} ימים</span>`); 
+            } 
+            
+            let entName = i.pName; 
+            if(i.type === 'task' && i.obj.linkedEntityType) { 
+                if(i.obj.linkedEntityType === 'course') { const c=window.DB.courses.find(x=>x.id==i.obj.linkedEntityId); if(c) entName = c.name; } 
+                if(i.obj.linkedEntityType === 'project') { const p=window.DB.projects.find(x=>x.id==i.obj.linkedEntityId); if(p) entName = p.name; } 
+            } 
+            
+            const icon = (i.type==='meeting'||i.type==='meetingObj')?'🤝':(i.type==='project'||i.obj.linkedEntityType==='project'?'🏗️':(i.type==='course'||i.obj.linkedEntityType==='course'?'🎓':'📝')); 
+            const ctx = entName ? `<div class="text-[10px] text-slate-600 bg-slate-200 px-2 py-1 rounded font-bold inline-block mb-2 cursor-pointer hover:bg-slate-300" onclick="window.nav('${i.type==='project'?'projects':'courses'}')">${icon} ${entName}</div>` : ''; 
+            const crmLnk = i.obj.linkedCrm ? `<span class="text-[10px] text-purple-700 bg-purple-100 border border-purple-200 px-2 py-1 rounded font-bold ml-1">👤 ${i.obj.linkedCrm}</span>` : ''; 
+            const recurringIcon = (i.obj.recurring && i.obj.recurringType && i.obj.recurringType !== 'none') ? `<span class="text-[10px] bg-blue-100 text-blue-700 px-1 py-0.5 rounded ml-1" title="מחזורי">🔄</span>` : '';
+            const idStr = `'${i.type}', '${i.type==='task'?i.obj.id:i.pid}', ${i.idx||0}`; 
+            
+            let commBtns = ''; 
+            if(i.obj.linkedCrm) { 
+                const firstContact = i.obj.linkedCrm.split(',')[0].trim(); 
+                const subj = (i.obj.text||i.obj.name).replace(/'/g,"\\'"); 
+                commBtns = `
+                    <button onclick="window.prepareWaMessage('${firstContact}', '${subj}')" class="text-sm bg-green-100 hover:bg-green-200 text-green-700 w-8 h-8 rounded flex items-center justify-center font-bold">💬</button>
+                    <button onclick="window.commAction('email', '${firstContact}', '${subj}')" class="text-sm bg-blue-100 hover:bg-blue-200 text-blue-700 w-8 h-8 rounded flex items-center justify-center font-bold">📧</button>
+                    <button onclick="window.commAction('ics', '${firstContact}', '${subj}')" class="text-sm bg-orange-100 hover:bg-orange-200 text-orange-700 w-8 h-8 rounded flex items-center justify-center font-bold">📅</button>
+                `; 
+            } 
+            
+            let logHtml = '';
+            if(i.obj.note) {
+                logHtml = `<div class="w-full text-[11px] text-slate-500 bg-slate-50 p-2 rounded mt-2 max-h-24 overflow-y-auto log-scroll border border-slate-200 leading-relaxed">${i.obj.note}</div>`;
+            }
 
-    window.openContactModal = () => { document.getElementById('crmId').value = ''; document.querySelectorAll('#contactModal input:not([type=hidden])').forEach(i => i.value = ''); window.toggleModal('contactModal'); };
-    window.saveContact = () => { const id = document.getElementById('crmId').value || String(Date.now() + Math.random()); const c = { id: id, first: document.getElementById('cFirst').value.trim(), last: document.getElementById('cLast').value.trim(), role: document.getElementById('cRole').value.trim(), dist: document.getElementById('cDist').value.trim(), stat: document.getElementById('cStat').value.trim(), phone: document.getElementById('cPhone').value.trim(), email: document.getElementById('cEmail').value.trim() }; if(!c.first) return alert('חובה שם'); if(!document.getElementById('crmId').value) { window.DB.contacts.push(c); } else { const idx = window.DB.contacts.findIndex(x => x.id === id); if(idx >= 0) window.DB.contacts[idx] = c; } window.saveData(); window.toggleModal('contactModal'); if(window.pendingLinkCrmName && window.pendingCrmCallback) { const fullName = `${c.first} ${c.last}`.trim(); setTimeout(() => { document.querySelectorAll('.link-crm-chk, .crs-staff-chk, .meet-crm-chk, .proj-mgr-chk, .fav-crm-chk').forEach(cb => { if(cb.value === fullName) cb.checked = true; }); }, 100); window.pendingLinkCrmName = null; window.pendingCrmCallback = null; } renderAll(); };
-    window.editCrm = (id) => { const c = window.DB.contacts.find(x => x.id === id); if(!c) return; document.getElementById('crmId').value = c.id; document.getElementById('cFirst').value = c.first; document.getElementById('cLast').value = c.last; document.getElementById('cRole').value = c.role || ''; document.getElementById('cDist').value = c.dist || ''; document.getElementById('cStat').value = c.stat || ''; document.getElementById('cPhone').value = c.phone || ''; document.getElementById('cEmail').value = c.email || ''; window.toggleModal('contactModal'); };
-    window.deleteCrm = (id) => { const c = window.DB.contacts.find(x => x.id === id); if(!c) return; const cName = `${c.first} ${c.last || ''}`.trim(); const isLinkedToTask = window.DB.tasks.some(t => t.linkedCrm && t.linkedCrm.includes(cName)); if(isLinkedToTask) return alert(`⚠️ ${cName} משויך למשימה.`); if(confirm(`למחוק ${cName}?`)) { window.DB.contacts = window.DB.contacts.filter(x => x.id !== id); window.saveData(); renderAll(); } };
-    function renderCRM() { const table = document.getElementById('crmTable'); if(!table) return; table.innerHTML = window.DB.contacts.map(c => `<tr class="hover:bg-blue-50"><td class="p-3 text-center border-r border-b"><input type="checkbox" class="crm-chk accent-blue-600" value="${c.phone||''}"></td><td class="p-3 font-bold text-blue-800 border-r border-b">${c.first} ${c.last || ''}</td><td class="p-3 text-slate-600 border-r border-b">${c.role || '--'}</td><td class="p-3 border-r border-b">${c.dist || '--'}/${c.stat || '--'}</td><td class="p-3 font-mono text-xs text-green-700 font-bold border-r border-b" dir="ltr">${c.phone || '--'}</td><td class="p-3 text-xs text-blue-600 border-r border-b">${c.email || '--'}</td><td class="p-3 text-center border-r border-b"><div class="flex gap-1 justify-center"><button onclick="window.editCrm('${c.id}')" class="bg-blue-100 text-blue-700 px-2 py-1 rounded btn text-xs">✏️</button><button onclick="window.deleteCrm('${c.id}')" class="bg-red-100 text-red-700 px-2 py-1 rounded btn text-xs">🗑️</button></div></td></tr>`).join(''); }
-    window.toggleCrmAll = (el) => { document.querySelectorAll('.crm-chk').forEach(c => c.checked = el.checked); };
-    window.exportCRM = () => { try { let csv = "\uFEFFשם,משפחה,תפקיד,מחוז,תחנה,טלפון,מייל\n" + window.DB.contacts.map(c => `${c.first},${c.last},${c.role},${c.dist},${c.stat},${c.phone},${c.email}`).join('\n'); const a = document.createElement('a'); a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv); a.download = `crm_${new Date().toISOString().split('T')[0]}.csv`; a.click(); } catch(e) { alert('שגיאה: ' + e.message); } };
-    window.processBulkCrm = () => { const txt = document.getElementById('bulkCrmText').value; if(!txt) return; const rows = txt.split('\n'); let added = 0; rows.forEach(r => { const cols = r.split(/[\t,]/); if(cols.length > 0 && cols[0].trim()) { window.DB.contacts.push({id: String(Date.now() + Math.random()), first: cols[0] ? cols[0].trim() : '', last: cols[1] ? cols[1].trim() : '', role: cols[2] ? cols[2].trim() : '', dist: cols[3] ? cols[3].trim() : '', stat: cols[4] ? cols[4].trim() : '', phone: cols[5] ? cols[5].trim() : '', email: cols[6] ? cols[6].trim() : ''}); added++; } }); window.saveData(); window.toggleModal('bulkCrmModal'); alert(`נקלטו ${added}.`); renderAll(); };
+            // Accordion for Meetings
+            if(i.type === 'meetingObj') {
+                const meeting = window.DB.meetings.find(m => m.id === i.pid);
+                const isMeetingOpen = window.openAccordions.has(`meet-${i.pid}`);
+                const topicsHtml = (meeting.topics||[]).map((t, tIdx) => `<div class="flex gap-2 text-sm text-slate-700 mb-1"><input type="checkbox" onchange="window.tglItem('meeting', ${i.pid}, ${tIdx})" ${t.done?'checked':''} class="mt-1"><span class="${t.done?'line-through':''}">${t.text}</span></div>`).join('');
+                
+                return `
+                <div class="p-3 border border-cyan-200 bg-cyan-50 flex flex-col shadow-sm mb-2 rounded-lg cursor-pointer" onclick="window.toggleAccordion('meet-${i.pid}')">
+                    <div class="flex justify-between items-center gap-2">
+                        <div class="font-bold text-[14px] text-cyan-900">${icon} ${i.obj.text} ▼</div>
+                        ${badge}
+                    </div>
+                    <div id="meet-${i.pid}" class="${isMeetingOpen ? '' : 'hidden'} mt-3 pt-2 border-t border-cyan-200" onclick="event.stopPropagation()">
+                        ${topicsHtml || '<div class="text-xs text-slate-400">אין נושאים פתוחים.</div>'}
+                    </div>
+                </div>`;
+            }
 
-    // COURSES
-    window.renderCrsStaffSelect = () => { document.getElementById('crsStaffCheckboxes').innerHTML = window.generateCrmCheckboxesHtml('crs-staff-chk'); };
-    window.openCourseModal = (id=null) => { document.querySelectorAll('#courseModal input').forEach(i=>i.value=''); window.renderCrsStaffSelect(); if(id) { const c = window.DB.courses.find(x=>String(x.id)===String(id)); if(!c) return; document.getElementById('courseModalTitle').innerText = 'עריכה'; document.getElementById('crsId').value = c.id; document.getElementById('cType').value = c.type; document.getElementById('cName').value = c.name; document.getElementById('cCmdr').value = c.cCmdr || ''; document.getElementById('cCoord').value = c.cCoord || ''; document.getElementById('cdS').value = c.cdS ? c.cdS.split('T')[0] : ''; document.getElementById('cdE').value = c.cdE ? c.cdE.split('T')[0] : ''; document.getElementById('cdCS').value = c.cdCS ? c.cdCS.split('T')[0] : ''; document.getElementById('cdCE').value = c.cdCE ? c.cdCE.split('T')[0] : ''; document.getElementById('dEventDate').value = c.cdCS ? c.cdCS.split('T')[0] : ''; document.getElementById('cLinkSyllabus').value = c.syllabusLink || ''; document.getElementById('cLinkRoster').value = c.rosterLink || ''; if(c.staff) { setTimeout(() => { document.querySelectorAll('.crs-staff-chk').forEach(cb => { if(c.staff.includes(cb.value)) cb.checked = true; }); }, 100); } } else { document.getElementById('courseModalTitle').innerText = 'קורס חדש'; document.getElementById('crsId').value = ''; } window.tglCrs(); window.toggleModal('courseModal'); };
-    window.tglCrs = () => { const t=document.getElementById('cType').value; document.getElementById('cDates').classList.toggle('hidden', t==='event'); document.getElementById('eventDateContainer').classList.toggle('hidden', t!=='event'); };
-    window.saveCourse = () => { const type = document.getElementById('cType').value; const name = document.getElementById('cName').value; if(!name) return alert('חובה שם'); let staffArr = []; document.querySelectorAll('.crs-staff-chk:checked').forEach(cb => staffArr.push(cb.value)); const cId = document.getElementById('crsId').value ? parseInt(document.getElementById('crsId').value) : Date.now(); let c = { id: cId, type, name, cCmdr: document.getElementById('cCmdr').value, cCoord: document.getElementById('cCoord').value, syllabusLink: document.getElementById('cLinkSyllabus').value, rosterLink: document.getElementById('cLinkRoster').value, steps: [], staff: staffArr, isArchived: false }; if(type !== 'event') { c.cdS = document.getElementById('cdS').value ? new Date(document.getElementById('cdS').value).toISOString() : null; c.cdE = document.getElementById('cdE').value ? new Date(document.getElementById('cdE').value).toISOString() : null; c.cdCS = document.getElementById('cdCS').value ? new Date(document.getElementById('cdCS').value).toISOString() : null; c.cdCE = document.getElementById('cdCE').value ? new Date(document.getElementById('cdCE').value).toISOString() : null; if(!document.getElementById('crsId').value && c.cdCS && type==='trend') { if(!window.DB.templates || window.DB.templates.length === 0) window.DB.templates = window.defaultTemplates; c.steps = window.DB.templates.map(t => { let dt = new Date(c[t.a] || c.cdCS); dt.setDate(dt.getDate() + t.d); return {name: t.n, deadline: dt.toISOString(), done: false, msgTemplate: t.msg || '', linkedCrm: '', note: ''}; }); } else if(document.getElementById('crsId').value) { c.steps = window.DB.courses.find(x=>String(x.id)===String(cId)).steps || []; } } else { c.cdCS = document.getElementById('dEventDate').value ? new Date(document.getElementById('dEventDate').value).toISOString() : null; } if(!document.getElementById('crsId').value) { window.DB.courses.push(c); } else { const idx = window.DB.courses.findIndex(x=>String(x.id)===String(cId)); if(idx >= 0) window.DB.courses[idx] = c; } window.saveData(); window.toggleModal('courseModal'); renderAll(); };
-    window.sendCourseDepartureMsg = (cId) => { const c = window.DB.courses.find(x=>String(x.id)===String(cId)); if(!c.staff || c.staff.length === 0) return alert('אין סגל.'); let msg = `צוות לקראת *${c.name}*.\nסגל: ${c.staff.join(', ')}.\nמפקד: ${c.cCmdr||'--'}\nבהצלחה!`; const firstContact = c.staff[0]; window.prepareWaMessage(firstContact, msg); };
-    function renderCourses() { const grid = document.getElementById('coursesGridList'); if(!grid) return; grid.innerHTML=''; ['תכנון','סגל','בביצוע','סיכום'].forEach((s, i) => grid.innerHTML += `<div class="kanban-col shadow-inner"><div class="p-2 bg-slate-200 text-slate-700 font-bold rounded mb-3 text-center">${s}</div><div id="c-list-${i}" class="space-y-3"></div></div>`); const now = new Date().setHours(0,0,0,0); window.DB.courses.forEach(c => { if(c.isArchived) return; let sIdx = 0; if(c.type==='event') { let d = new Date(c.cdCS).setHours(0,0,0,0); sIdx = d < now ? 3 : (d === now ? 2 : 0); } else { let sC = c.cdCS ? new Date(c.cdCS).setHours(0,0,0,0) : null; let eC = c.cdCE ? new Date(c.cdCE).setHours(0,0,0,0) : null; let sS = c.cdS ? new Date(c.cdS).setHours(0,0,0,0) : null; if(eC && now > eC) sIdx = 3; else if(sC && now >= sC) sIdx = 2; else if(sS && now >= sS) sIdx = 1; } const pct = c.steps && c.steps.length ? Math.round((c.steps.filter(s=>s.done).length/c.steps.length)*100) : 0; const staffStr = c.staff && c.staff.length ? c.staff.slice(0, 2).join(', ') + (c.staff.length > 2 ? '...' : '') : 'ללא'; const vaultHtml = (c.syllabusLink || c.rosterLink) ? `<div class="flex gap-2 mb-2 border-t pt-2">${c.syllabusLink ? `<a href="${c.syllabusLink}" target="_blank" class="text-[10px] bg-indigo-50 text-indigo-700 px-2 py-1 rounded">🔗 סילבוס</a>`:''} ${c.rosterLink ? `<a href="${c.rosterLink}" target="_blank" class="text-[10px] bg-indigo-50 text-indigo-700 px-2 py-1 rounded">🔗 חניכים</a>`:''}</div>` : ''; document.getElementById(`c-list-${sIdx}`).innerHTML += `<div class="bg-white p-3 rounded-lg border-t-4 ${c.type==='trend'?'border-indigo-500':'border-blue-400'} shadow-sm"><div class="flex justify-between font-bold mb-1"><span class="text-[15px]">${c.type==='event'?'🎪':'🎓'} ${c.name}</span><span class="text-indigo-600">${pct>0?pct+'%':''}</span></div><div class="text-[10px] text-slate-500 mb-2">מפקד: ${c.cCmdr||'--'}<br>סגל: ${staffStr}<br>פתיחה: ${c.cdCS?new Date(c.cdCS).toLocaleDateString('he-IL'):'--'}</div>${vaultHtml}<div class="flex gap-2 mt-2"><button class="flex-1 bg-slate-100 p-1 text-center text-xs font-bold text-slate-600 rounded btn" onclick="document.getElementById('det-${c.id}').classList.toggle('hidden')">משימות ▼</button><button class="bg-green-100 p-1 px-2 text-center text-xs font-bold text-green-700 rounded btn" onclick="window.sendCourseDepartureMsg('${c.id}')">📢</button><button class="bg-slate-100 p-1 px-2 text-center text-xs font-bold text-slate-600 rounded btn" onclick="window.openCourseModal(${c.id})">✏️</button></div><div id="det-${c.id}" class="hidden mt-2 pt-2 border-t"><div class="flex gap-1 mb-2"><input id="nt-${c.id}" class="input-std text-xs p-1" placeholder="משימה..."><input type="date" id="nd-${c.id}" class="input-std text-xs w-24 p-1"><button onclick="window.addCrsTask(${c.id})" class="bg-indigo-100 text-indigo-700 px-3 rounded font-bold btn">+</button></div><div class="max-h-40 overflow-y-auto space-y-2 mb-2">${(c.steps||[]).map((s,i)=>`<div class="flex justify-between items-center text-xs border-b pb-1"><div class="flex items-center gap-2"><input type="checkbox" class="accent-indigo-600 w-3 h-3" ${s.done?'checked':''} onchange="window.tglItem('course',${c.id},${i})"><span class="${s.done?'line-through text-slate-400':'font-bold'}">${s.name}</span></div><div class="flex gap-2"><span class="text-[10px]">${s.deadline?new Date(s.deadline).toLocaleDateString('he-IL'):''}</span><button onclick="window.openLinkModal('course', ${c.id}, ${i})" class="text-[10px] bg-slate-100 px-1.5 py-0.5 rounded btn">🔗</button></div></div>`).join('')}</div><button onclick="if(confirm('לארכב?')) { window.DB.courses.find(x=>x.id===${c.id}).isArchived=true; window.saveData(); renderAll(); }" class="text-[10px] text-orange-500 font-bold w-full text-right mt-1 btn">📦</button></div></div>`; }); }
-    window.addCrsTask = (id) => { const txt = document.getElementById(`nt-${id}`).value; const d = document.getElementById(`nd-${id}`).value; if(txt) { const course = window.DB.courses.find(x=>x.id===id); if(course) { course.steps.push({name: txt, deadline: d ? new Date(d).toISOString() : null, done: false, linkedCrm: '', note: ''}); window.saveData(); renderAll(); } } };
+            const dragAttrs = i.type === 'task' ? `draggable="true" ondragstart="window.dragStart(event, '${i.obj.id}')" ondragend="window.dragEnd(event)" ondragover="window.dragOver(event)" ondragleave="window.dragLeave(event)" ondrop="window.dropTask(event, '${i.obj.id}')"` : '';
 
-    // PROJECTS
-    window.renderProjMgrSelect = () => { document.getElementById('projMgrCheckboxes').innerHTML = window.generateCrmCheckboxesHtml('proj-mgr-chk'); };
-    window.openProjectModal = (id=null) => { document.querySelectorAll('#projectModal input, #projectModal textarea').forEach(i=>i.value=''); window.renderProjMgrSelect(); if(id) { const p = window.DB.projects.find(x=>String(x.id)===String(id)); if(!p) return; document.getElementById('projModalTitle').innerText = 'עריכה'; document.getElementById('projId').value = p.id; document.getElementById('projName').value = p.name; document.getElementById('projDesc').value = p.desc || ''; document.getElementById('pLinkDrive').value = p.driveLink || ''; document.getElementById('projFirstMilestone').classList.add('hidden'); if(p.manager) { const managers = p.manager.split(',').map(m => m.trim()); setTimeout(() => { document.querySelectorAll('.proj-mgr-chk').forEach(cb => { if(managers.includes(cb.value)) cb.checked = true; }); }, 100); } } else { document.getElementById('projModalTitle').innerText = 'חדש'; document.getElementById('projId').value = ''; document.getElementById('projFirstMilestone').classList.remove('hidden'); } window.toggleModal('projectModal'); };
-    window.saveProject = () => { const n = document.getElementById('projName').value; if(!n) return alert('חובה שם'); let mgrArr = []; document.querySelectorAll('.proj-mgr-chk:checked').forEach(cb => mgrArr.push(cb.value)); const pId = document.getElementById('projId').value ? parseInt(document.getElementById('projId').value) : Date.now(); let p = { id: pId, name: n, manager: mgrArr.join(', '), desc: document.getElementById('projDesc').value, driveLink: document.getElementById('pLinkDrive').value, isArchived: false }; if(!document.getElementById('projId').value) { p.milestones = [{text: document.getElementById('projMilestone').value || 'אבן דרך', date: document.getElementById('projDate').value ? new Date(document.getElementById('projDate').value).toISOString() : null, done: false, linkedCrm: '', note: ''}]; window.DB.projects.push(p); } else { const idx = window.DB.projects.findIndex(x=>String(x.id)===String(pId)); if(idx >= 0) { p.milestones = window.DB.projects[idx].milestones; window.DB.projects[idx] = p; } } window.saveData(); window.toggleModal('projectModal'); renderAll(); };
-    window.addMilestone = (pid) => { const t = document.getElementById(`newMile-${pid}`).value; const d = document.getElementById(`newMileDate-${pid}`).value; if(t) { const project = window.DB.projects.find(x=>x.id===pid); if(project) { project.milestones.push({text: t, date: d ? new Date(d).toISOString() : null, done: false, linkedCrm: '', note: ''}); window.saveData(); renderAll(); } } };
-    function renderProjects() { const container = document.getElementById('projectsList'); if(!container) return; container.innerHTML = window.DB.projects.filter(p=>!p.isArchived).map(p => { const vaultHtml = p.driveLink ? `<a href="${p.driveLink}" target="_blank" class="text-[10px] bg-purple-100 text-purple-800 px-2 py-1 rounded block w-max mb-3">🔗 ענן</a>` : ''; return `<div class="glass-card shadow-sm border-t-4 border-purple-500 flex flex-col"><div class="p-4 bg-white flex justify-between font-bold text-purple-900 border-b items-center"><span class="text-lg">🏗️ ${p.name}</span><div class="flex gap-2 items-center"><span class="text-xs font-normal text-slate-600 bg-slate-100 px-2 py-1 rounded">${p.manager||'ללא'}</span><button class="text-xs bg-slate-100 px-2 py-1 rounded btn" onclick="window.openProjectModal(${p.id})">✏️</button></div></div><div class="p-4 bg-slate-50 flex-1 flex flex-col"><div class="text-sm text-slate-600 mb-2 italic">${p.desc||''}</div>${vaultHtml}<div class="space-y-2 mb-4 pt-2 border-t flex-1">${p.milestones.map((m,i)=>`<div class="flex justify-between items-center text-sm border-b pb-2"><div class="flex gap-2 items-center"><input type="checkbox" class="accent-purple-600 w-4 h-4" ${m.done?'checked':''} onchange="window.tglItem('project',${p.id},${i})"><span class="${m.done?'line-through text-slate-400':'font-bold'}">${m.text}</span></div><div class="flex gap-2"><span class="text-xs">${m.date?new Date(m.date).toLocaleDateString('he-IL'):''}</span><button onclick="window.openLinkModal('project', ${p.id}, ${i})" class="text-[10px] bg-slate-200 px-1.5 py-0.5 rounded btn">🔗</button></div></div>`).join('')}</div><div class="flex gap-2 pt-2"><input id="newMile-${p.id}" class="input-std text-sm flex-1" placeholder="אבן דרך..."><input type="date" id="newMileDate-${p.id}" class="input-std w-28 text-xs"><button onclick="window.addMilestone(${p.id})" class="bg-purple-200 text-purple-800 px-4 rounded font-bold btn">+</button></div><button onclick="if(confirm('לארכב?')) { window.DB.projects.find(x=>x.id===${p.id}).isArchived=true; window.saveData(); renderAll(); }" class="text-xs font-bold text-orange-500 mt-4 w-full text-right btn">📦</button></div></div>`; }).join(''); }
+            return `
+            <div class="draggable-item p-3 border border-slate-200 bg-white hover:bg-slate-50 prio-${i.obj.priority||1} flex flex-col md:flex-row justify-between gap-3 transition shadow-sm mb-2 rounded-lg" ${dragAttrs}>
+                <div class="flex items-start gap-3 w-full flex-1">
+                    <input type="checkbox" onchange="window.tglItem(${idStr})" class="w-5 h-5 mt-1 accent-green-600 cursor-pointer shadow-inner">
+                    <div class="flex-1 w-full">
+                        ${ctx}${recurringIcon}${crmLnk}
+                        <div class="font-bold text-[16px] leading-snug text-slate-800 mt-1">${i.obj.text||i.obj.name}</div>
+                        <div class="flex items-center gap-2 mt-2 text-xs font-bold text-slate-500 flex-wrap">
+                            <span class="cursor-pointer hover:bg-slate-200 bg-slate-100 px-2 py-1 rounded transition" onclick="window.openLinkModal(${idStr})">🔗 שיוך ותזמון</span>
+                            <span class="cursor-pointer hover:bg-orange-100 hover:text-orange-700 bg-slate-100 px-2 py-1 rounded transition" onclick="window.switchFollow(${idStr})">⮀ ${i.isFollowup||i.obj.isFollowup?'החזר':'למעקב'}</span>
+                            ${i.type === 'task' ? `<span class="cursor-pointer hover:bg-red-100 hover:text-red-700 bg-slate-100 px-2 py-1 rounded transition" onclick="window.bumpTask('${i.obj.id}')" title="הקפץ למעלה">⬆️ הקפץ</span>` : ''}
+                        </div>
+                        ${logHtml}
+                    </div>
+                </div>
+                <div class="flex items-start gap-2 justify-between w-full md:w-auto flex-wrap md:flex-col md:items-end">
+                    <div class="flex gap-1">${commBtns}</div>
+                    ${badge}
+                    <div class="flex gap-1 items-center mt-auto w-full md:w-auto">
+                        <button onclick="window.openSnoozeModal(${idStr})" class="bg-slate-200 font-bold text-slate-700 px-3 py-2 rounded text-xs btn hover:bg-slate-300">⏰ השהה</button>
+                        <input class="text-xs font-bold bg-yellow-50 border border-yellow-200 rounded w-full md:w-40 px-2 py-2 focus:w-full transition-all" placeholder="Enter לשמירת הערה ביומן..." onkeyup="if(event.key==='Enter'){window.updateGlobalNote(${idStr}, this.value); this.value='';}">
+                    </div>
+                </div>
+            </div>`; 
+        }
 
-    // MEETINGS
-    window.renderMeetCrmSelect = () => { document.getElementById('meetCrmCheckboxes').innerHTML = window.generateCrmCheckboxesHtml('meet-crm-chk'); };
-    window.openMeetingModal = () => { window.renderMeetCrmSelect(); document.getElementById('meetDate').value = ''; window.toggleModal('meetingModal'); };
-    window.saveMeeting = () => { let selected = []; document.querySelectorAll('.meet-crm-chk:checked').forEach(cb => selected.push(cb.value)); if(selected.length === 0) return alert('בחר גורם.'); const d = document.getElementById('meetDate').value; window.DB.meetings.push({id: Date.now(), name: selected.join(', '), date: d ? new Date(d).toISOString() : null, topics: [], isArchived: false}); window.saveData(); window.toggleModal('meetingModal'); renderAll(); };
-    window.addMeetingTopic = (mid) => { const v = document.getElementById(`newTopic-${mid}`).value; if(v) { const meeting = window.DB.meetings.find(m=>m.id===mid); if(meeting) { meeting.topics.push({text: v, done: false, note: '', linkedCrm: ''}); window.saveData(); renderAll(); } } };
-    function renderMeetings() { const container = document.getElementById('meetingsGrid'); if(!container) return; container.innerHTML = window.DB.meetings.filter(m=>!m.isArchived).map(m => { const firstContact = m.name.split(',')[0].trim(); const dHtml = m.date ? `<div class="text-xs bg-cyan-100 text-cyan-800 px-2 py-1 rounded font-bold">📅 ${new Date(m.date).toLocaleDateString('he-IL')}</div>` : ''; return `<div class="glass-card shadow-sm border-t-4 border-cyan-500 flex flex-col"><div class="p-3 bg-white border-b font-bold flex justify-between items-center"><div class="flex flex-col"><span class="text-lg text-cyan-900">🤝 ${m.name}</span>${dHtml}</div><button onclick="if(confirm('לארכב?')){window.DB.meetings.find(x=>x.id===${m.id}).isArchived=true;window.saveData();renderAll();}" class="text-red-500 bg-red-50 px-2 py-1 rounded font-bold btn">✕</button></div><div class="px-3 pt-3 flex gap-2 justify-center border-b pb-3"><button onclick="window.prepareWaMessage('${firstContact}', 'סיכום:')" class="flex-1 text-sm bg-green-50 text-green-700 py-1.5 rounded font-bold btn border">💬</button><button onclick="window.commAction('email', '${firstContact}', 'סיכום')" class="flex-1 text-sm bg-blue-50 text-blue-700 py-1.5 rounded font-bold btn border">📧</button><button onclick="window.commAction('ics', '${firstContact}', 'פגישה: ${m.name}')" class="flex-1 text-sm bg-orange-50 text-orange-700 py-1.5 rounded font-bold btn border">📅</button></div><div class="p-3 space-y-3 bg-slate-50 flex-1 flex flex-col"><div class="flex-1 space-y-2">${(m.topics||[]).map((t,i) => `<div class="text-sm bg-white p-2 rounded-lg border shadow-sm"><div class="flex items-start gap-2 mb-2"><input type="checkbox" class="mt-1 accent-cyan-600 w-4 h-4" ${t.done?'checked':''} onchange="window.tglItem('meeting',${m.id},${i})"> <span class="font-bold ${t.done?'line-through text-slate-400':''}">${t.text}</span></div><textarea class="w-full text-xs bg-slate-50 p-2 border rounded resize-none h-16" placeholder="סיכום..." onchange="window.updateGlobalNote('meeting',${m.id},${i},this.value)">${t.note||''}</textarea></div>`).join('')}</div><div class="flex gap-2 pt-2 mt-2 border-t"><input id="newTopic-${m.id}" class="input-std text-sm" placeholder="נושא..." onkeyup="if(event.key==='Enter'){window.addMeetingTopic(${m.id});this.value='';}"><button onclick="window.addMeetingTopic(${m.id})" class="bg-cyan-100 text-cyan-800 px-4 rounded btn">+</button></div></div></div>`; }).join(''); }
+        window.bumpTask = (id) => {
+            const task = window.DB.tasks.find(t => t.id === id);
+            if(task) {
+                task.priority = '3';
+                task.deadline = new Date().toISOString().split('T')[0];
+                if(!task.text.startsWith('🔥')) task.text = '🔥 ' + task.text;
+                // Move to beginning of array to assure top position
+                const idx = window.DB.tasks.findIndex(t => t.id === id);
+                window.DB.tasks.splice(idx, 1);
+                window.DB.tasks.unshift(task);
+                window.saveData(); renderAll();
+            }
+        };
 
-    // MAP
-    let opsMap = null;
-    window.renderMap = () => { if (document.getElementById('page-ops') && !document.getElementById('page-ops').classList.contains('hidden') && !opsMap) { opsMap = L.map('opsMapContainer').setView([31.7683, 35.2137], 8); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(opsMap); } if (opsMap) setTimeout(() => opsMap.invalidateSize(), 300); };
-    window.mapLocate = () => { const v = document.getElementById('mapCoords').value.trim(); if (v.includes(',')) { const parts = v.split(','); const lat = parseFloat(parts[0]); const lng = parseFloat(parts[1]); if(!isNaN(lat) && !isNaN(lng) && opsMap) { opsMap.setView([lat, lng], 15); L.marker([lat, lng]).addTo(opsMap).bindPopup(`${lat}, ${lng}`).openPopup(); } else alert('פורמט שגוי.'); } else alert('הזן נ.צ מופרדות בפסיק'); };
+        window.tglItem = (t, pid, idx) => { 
+            try {
+                if(t==='task') {
+                    let task = window.DB.tasks.find(x=>x.id===pid);
+                    if(!task) return;
+                    task.done = true;
+                    // Recurring Logic
+                    if(task.recurring && task.recurringType && task.recurringType !== 'none' && task.deadline) {
+                        let d = new Date(task.deadline);
+                        switch(task.recurringType) {
+                            case 'daily': d.setDate(d.getDate() + 1); break;
+                            case 'weekly': d.setDate(d.getDate() + 7); break;
+                            case 'monthly': d.setMonth(d.getMonth() + 1); break;
+                        }
+                        window.DB.tasks.push({...task, id: String(Date.now() + Math.random()), done: false, deadline: d.toISOString().split('T')[0], note: ''});
+                    }
+                } 
+                else if(t==='course') window.DB.courses.find(x=>String(x.id)===String(pid)).steps[idx].done = true; 
+                else if(t==='project') window.DB.projects.find(x=>String(x.id)===String(pid)).milestones[idx].done = true; 
+                else if(t==='meeting') window.DB.meetings.find(x=>String(x.id)===String(pid)).topics[idx].done = true; 
+                
+                window.saveData(); 
+                renderAll();
+            } catch(e) { console.error('Toggle error:', e); }
+        };
+        
+        window.switchFollow = (t,pid) => { 
+            if(t==='task') { 
+                let i=window.DB.tasks.find(x=>x.id===pid); 
+                if(i) { i.isFollowup = !i.isFollowup; window.saveData(); renderDashboard(); renderFullLists(); } 
+            } else alert("רק למשימות ראשיות. אבני דרך קבועות במסגרת שלהן."); 
+        };
 
-    // TEMPLATES & SETTINGS (FIXED!)
-    window.renderTemplatesEditor = () => { const container = document.getElementById('templatesEditorList'); if(!container) return; if(!window.DB.templates || window.DB.templates.length === 0) window.DB.templates = window.defaultTemplates; container.innerHTML = window.DB.templates.map((t, i) => `<div class="bg-white p-3 rounded-lg border shadow-sm"><div class="flex gap-2 mb-2"><input type="text" value="${t.n}" onchange="window.DB.templates[${i}].n = this.value" class="input-std flex-1 font-bold" placeholder="שם"><select onchange="window.DB.templates[${i}].a = this.value" class="input-std w-32"><option value="cdS" ${t.a==='cdS'?'selected':''}>סגל</option><option value="cdCS" ${t.a==='cdCS'?'selected':''}>קורס</option><option value="cdCE" ${t.a==='cdCE'?'selected':''}>סיום</option></select><input type="number" value="${t.d}" onchange="window.DB.templates[${i}].d = parseInt(this.value)" class="input-std w-20 text-center" placeholder="ימים"><button onclick="window.DB.templates.splice(${i}, 1); window.renderTemplatesEditor()" class="bg-red-100 text-red-700 px-3 rounded btn">🗑️</button></div><textarea onchange="window.DB.templates[${i}].msg = this.value" class="input-std h-16 text-xs" placeholder="תבנית WA">${t.msg||''}</textarea></div>`).join(''); };
-    window.addTemplateStep = () => { if(!window.DB.templates) window.DB.templates = []; window.DB.templates.push({n: "שלב חדש", a: "cdCS", d: 0, msg: ""}); window.renderTemplatesEditor(); };
-    window.resetTemplatesToDefault = () => { if(confirm('לשחזר 14 שלבים?')) { window.DB.templates = JSON.parse(JSON.stringify(window.defaultTemplates)); window.renderTemplatesEditor(); } };
-    window.closeSettingsModal = () => { window.saveData(); window.toggleModal('settingsModal'); };
+        // FIXED: getHours() instead of toHours()
+        window.updateGlobalNote = (type, pid, idx, val) => { 
+            if(!val.trim()) return; 
+            const timeStr = `[${new Date().getHours().toString().padStart(2,'0')}:${new Date().getMinutes().toString().padStart(2,'0')}]`; 
+            let entry = `<div class="mb-1 pb-1 border-b border-slate-100"><span class="font-bold text-slate-700">${timeStr}</span> ${val}</div>`; 
+            
+            try { 
+                if(type==='task') { let t = window.DB.tasks.find(x=>x.id===pid); if(t) t.note = (t.note||'') + entry; } 
+                else if(type==='course') { let c = window.DB.courses.find(x=>String(x.id)===String(pid)); if(c && c.steps[idx]) c.steps[idx].note = (c.steps[idx].note||'') + entry; } 
+                else if(type==='project') { let p = window.DB.projects.find(x=>String(x.id)===String(pid)); if(p && p.milestones[idx]) p.milestones[idx].note = (p.milestones[idx].note||'') + entry; } 
+                else if(type==='meeting') { let m = window.DB.meetings.find(x=>String(x.id)===String(pid)); if(m && m.topics[idx]) m.topics[idx].note = (m.topics[idx].note||'') + entry; } 
+                
+                window.saveData(); 
+                renderAll(); 
+            } catch(e) { console.error(e); } 
+        };
 
-    // TIMER & BRIEFING
-    let ti, tl;
-    window.startTimer = () => { const btn = document.getElementById('btnTimer'); if(ti) { clearInterval(ti); ti = null; btn.innerText = "המשך"; btn.className = "bg-green-600 hover:bg-green-500 px-4 py-2 rounded font-bold flex items-center btn transition"; } else { if(!tl) tl = document.getElementById('timerSetMin').value * 60; btn.innerText = "השהה"; btn.className = "bg-yellow-500 text-black px-4 py-2 rounded font-bold flex items-center btn transition"; ti = setInterval(() => { if(tl > 0) { tl--; let m = Math.floor(tl / 60).toString().padStart(2, '0'); let s = (tl % 60).toString().padStart(2, '0'); document.getElementById('timerDisplay').innerText = `${m}:${s}`; } else { clearInterval(ti); document.getElementById('timerSound').play().catch(e => {}); alert('⏰ הזמן נגמר!'); window.resetTimer(); } }, 1000); } };
-    window.resetTimer = () => { clearInterval(ti); ti = null; tl = null; document.getElementById('timerDisplay').innerText = `${document.getElementById('timerSetMin').value}:00`; const btn = document.getElementById('btnTimer'); btn.innerText = "התחל"; btn.className = "bg-green-600 hover:bg-green-500 px-4 py-2 rounded font-bold flex items-center btn transition"; };
-    window.printBriefing = () => { document.getElementById('printDate').innerText = new Date().toLocaleDateString('he-IL'); const now = new Date(); const limit = new Date(); limit.setDate(limit.getDate() + 1); let tasks = []; window.DB.tasks.forEach(t => { if(!t.done && (!t.deadline || new Date(t.deadline) <= limit || t.priority == 3)) tasks.push(`[ ] ${t.text} ${t.priority == 3 ? '(דחוף)' : ''}`); }); document.getElementById('pbTasks').innerHTML = tasks.join('<br>') || '<span class="text-slate-400">אין.</span>'; let meets = []; window.DB.meetings.forEach(m => { let open = (m.topics || []).filter(t => !t.done); if(open.length) meets.push(`<b>${m.name}:</b> ${open.map(x => x.text).join(' | ')}`); }); document.getElementById('pbMeetings').innerHTML = meets.join('<br><br>') || '<span class="text-slate-400">אין.</span>'; let crs = []; window.DB.courses.forEach(c => { if(!c.isArchived && c.cdCS && new Date(c.cdCS) <= now && (!c.cdCE || new Date(c.cdCE) >= now)) crs.push(`<b>${c.name}</b> (${c.cCmdr || '--'})`); }); document.getElementById('pbCourses').innerHTML = crs.join('<br>') || '<span class="text-slate-400">אין.</span>'; document.querySelector('main').classList.add('hidden'); document.getElementById('printArea').classList.remove('hidden'); window.print(); setTimeout(() => { document.querySelector('main').classList.remove('hidden'); document.getElementById('printArea').classList.add('hidden'); }, 1000); };
-</script>
+        // SNOOZE MODAL LOGIC
+        window.openSnoozeModal = (t, pid, idx) => {
+            document.getElementById('snoozeType').value = t;
+            document.getElementById('snoozeId').value = pid;
+            document.getElementById('snoozeIdx').value = idx || 0;
+            document.getElementById('snoozeSpecificDate').value = '';
+            window.toggleModal('snoozeModal');
+        };
+
+        window.applySnooze = (unit, amount) => {
+            const t = document.getElementById('snoozeType').value;
+            const pid = document.getElementById('snoozeId').value;
+            const idx = document.getElementById('snoozeIdx').value;
+            
+            let d = new Date();
+            if(unit === 'specific') {
+                const spec = document.getElementById('snoozeSpecificDate').value;
+                if(!spec) return alert('בחר תאריך ביומן');
+                d = new Date(spec);
+            } else if(unit === 'hours') {
+                d.setHours(d.getHours() + amount);
+            } else if(unit === 'days') {
+                d.setDate(d.getDate() + amount);
+            }
+            
+            const iso = d.toISOString();
+            
+            if(t==='task') { let x=window.DB.tasks.find(y=>y.id===pid); if(x) x.deadline = iso; } 
+            else if(t==='course') { let c=window.DB.courses.find(y=>String(y.id)===String(pid)); if(c && c.steps[idx]) c.steps[idx].deadline = iso; } 
+            else if(t==='project') { let p=window.DB.projects.find(y=>String(y.id)===String(pid)); if(p && p.milestones[idx]) p.milestones[idx].date = iso; } 
+            
+            window.saveData(); 
+            window.toggleModal('snoozeModal'); 
+            renderAll();
+        };
+        
+        window.snoozeItem = window.openSnoozeModal; // Re-route original button
+
+        // THE HUB
+        window.renderLinkCrmSelect = () => { document.getElementById('linkCrmCheckboxes').innerHTML = window.generateCrmCheckboxesHtml('link-crm-chk'); };
+        
+        window.openLinkModal = (t, pid, idx) => { 
+            document.getElementById('linkTaskType').value = t; 
+            document.getElementById('linkTaskId').value = pid; 
+            document.getElementById('linkTaskIdx').value = idx; 
+            window.renderLinkCrmSelect(); 
+            document.getElementById('linkCrmFilter').value = ''; 
+            
+            const sel = document.getElementById('linkTaskEntity'); 
+            sel.innerHTML = '<option value="">-- ללא שיוך למסגרת --</option>'; 
+            if(t === 'task') { 
+                sel.disabled = false; 
+                window.DB.courses.filter(c=>!c.isArchived).forEach(c => sel.innerHTML += `<option value="course_${c.id}">🎓 ${c.name}</option>`); 
+                window.DB.projects.filter(p=>!p.isArchived).forEach(p => sel.innerHTML += `<option value="project_${p.id}">🏗️ ${p.name}</option>`); 
+            } else { 
+                sel.disabled = true; 
+            } 
+            
+            let obj = null, dVal = ''; 
+            if(t==='task') { 
+                obj=window.DB.tasks.find(x=>x.id===pid); 
+                if(obj) { 
+                    dVal=obj.deadline; 
+                    document.getElementById('linkTaskRecurringType').value = obj.recurringType || 'none'; 
+                    if(obj.linkedEntityType) sel.value=`${obj.linkedEntityType}_${obj.linkedEntityId}`; 
+                } 
+            } else if(t==='course') { 
+                obj=window.DB.courses.find(x=>String(x.id)===String(pid))?.steps[idx]; if(obj) dVal=obj.deadline; 
+            } else if(t==='project') { 
+                obj=window.DB.projects.find(x=>String(x.id)===String(pid))?.milestones[idx]; if(obj) dVal=obj.date; 
+            } else if(t==='meeting') { 
+                obj=window.DB.meetings.find(x=>String(x.id)===String(pid))?.topics[idx]; 
+            } 
+            
+            if(obj) { 
+                if(obj.linkedCrm) { 
+                    const linkedNames = obj.linkedCrm.split(',').map(n => n.trim()); 
+                    setTimeout(() => { 
+                        document.querySelectorAll('.link-crm-chk').forEach(cb => { if(linkedNames.includes(cb.value)) cb.checked = true; }); 
+                    }, 100); 
+                } 
+                document.getElementById('linkTaskDate').value = dVal ? new Date(dVal).toISOString().split('T')[0] : ''; 
+                window.toggleModal('linkModal'); 
+            } 
+        };
+
+        window.saveTaskLinks = () => { 
+            const t = document.getElementById('linkTaskType').value; 
+            const pid = document.getElementById('linkTaskId').value; 
+            const idx = document.getElementById('linkTaskIdx').value; 
+            const d = document.getElementById('linkTaskDate').value; 
+            const ent = document.getElementById('linkTaskEntity').value; 
+            const recType = document.getElementById('linkTaskRecurringType').value; 
+            
+            let selectedCrms = []; 
+            document.querySelectorAll('.link-crm-chk:checked').forEach(cb => selectedCrms.push(cb.value)); 
+            const crmFinal = selectedCrms.join(', '); 
+            const isoD = d ? new Date(d).toISOString() : null; 
+            
+            try { 
+                if(t==='task') { 
+                    let x = window.DB.tasks.find(y=>y.id===pid); 
+                    if(x) { 
+                        x.linkedCrm = crmFinal; x.deadline = isoD; x.recurring = recType !== 'none'; x.recurringType = recType; 
+                        if(ent) { const parts = ent.split('_'); x.linkedEntityType = parts[0]; x.linkedEntityId = parseInt(parts[1]); } 
+                        else { x.linkedEntityType = null; x.linkedEntityId = null; } 
+                    } 
+                } else if(t==='course') { 
+                    let c = window.DB.courses.find(y=>String(y.id)===String(pid)); if(c && c.steps[idx]) { c.steps[idx].linkedCrm = crmFinal; c.steps[idx].deadline = isoD; } 
+                } else if(t==='project') { 
+                    let p = window.DB.projects.find(y=>String(y.id)===String(pid)); if(p && p.milestones[idx]) { p.milestones[idx].linkedCrm = crmFinal; p.milestones[idx].date = isoD; } 
+                } else if(t==='meeting') { 
+                    let m = window.DB.meetings.find(y=>String(y.id)===String(pid)); if(m && m.topics[idx]) { m.topics[idx].linkedCrm = crmFinal; } 
+                } 
+                window.saveData(); window.toggleModal('linkModal'); renderAll(); 
+            } catch(e) { alert('שגיאה: ' + e.message); } 
+        };
+
+        // WHATSAPP & COMM
+        window.pendingWaPhone = '';
+        window.prepareWaMessage = (contactName, defaultText) => { 
+            const c = window.DB.contacts.find(x => `${x.first} ${x.last||''}`.trim() === contactName.trim()); 
+            if(!c) return alert('לא נמצא איש קשר במאגר.'); 
+            if(!c.phone) return alert('חסר מספר טלפון לאיש הקשר.'); 
+            
+            window.pendingWaPhone = c.phone.replace(/^0/, '').replace(/[^0-9]/g, ''); 
+            document.getElementById('waPreviewTarget').innerText = `${contactName} (${c.phone})`; 
+            document.getElementById('waPreviewText').value = defaultText; 
+            
+            document.getElementById('btnSendWaFinal').onclick = () => { 
+                const txt = document.getElementById('waPreviewText').value; 
+                window.open(`https://wa.me/972${window.pendingWaPhone}?text=${encodeURIComponent(txt)}`); 
+                window.toggleModal('waPreviewModal'); 
+            }; 
+            window.toggleModal('waPreviewModal'); 
+        };
+        
+        window.commAction = (method, contactName, subjectText, additionalBody = '') => { 
+            const c = window.DB.contacts.find(x => `${x.first} ${x.last||''}`.trim() === contactName.trim()); 
+            if(!c) return alert('איש הקשר לא קיים.'); 
+            
+            if(method === 'email') { 
+                if(!c.email) return alert('חסר אימייל לאיש הקשר.'); 
+                const fullBody = additionalBody ? `\n\n---\n${additionalBody}` : '';
+                window.open(`mailto:${c.email}?subject=${encodeURIComponent(subjectText)}&body=${encodeURIComponent(fullBody)}`); 
+            } else if(method === 'ics') { 
+                let emailStr = (c && c.email) ? `\nATTENDEE;CN="${contactName}":mailto:${c.email}` : ''; 
+                const now = new Date(); const start = now.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z'; 
+                now.setHours(now.getHours()+1); const end = now.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z'; 
+                
+                const desc = additionalBody ? `\nDESCRIPTION:${additionalBody.replace(/\n/g, '\\n')}` : `\nDESCRIPTION:פגישה מול ${contactName}`;
+                
+                const icsData = `BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nUID:${Date.now()}@ops\nDTSTAMP:${start}\nDTSTART:${start}\nDTEND:${end}\nSUMMARY:${subjectText}${emailStr}${desc}\nEND:VEVENT\nEND:VCALENDAR`.replace(/\n/g, "\r\n"); 
+                const blob = new Blob([icsData], { type: 'text/calendar' }); 
+                const link = document.createElement('a'); link.href = window.URL.createObjectURL(blob); link.download = `meeting.ics`; link.click(); 
+            } 
+        };
+
+        // FAVORITES
+        window.renderFavorites = () => { 
+            const panel = document.getElementById('favoritesPanel'); 
+            if(!window.DB.favorites || window.DB.favorites.length === 0) { 
+                panel.innerHTML = '<div class="col-span-2 text-xs text-slate-400">אין אנשי קשר נעוצים בחפ"ק. לחץ על "נהל".</div>'; 
+                return; 
+            } 
+            panel.innerHTML = window.DB.favorites.map(fName => { 
+                const c = window.DB.contacts.find(x => `${x.first} ${x.last||''}`.trim() === fName); 
+                if(!c) return ''; 
+                return `<div class="bg-indigo-50 border border-indigo-100 p-2 rounded flex justify-between items-center shadow-sm hover:bg-indigo-100 transition"><div class="flex flex-col"><span class="font-bold text-sm text-indigo-900">${fName}</span><div class="text-[10px] text-indigo-600">${c.role||'--'}</div></div><div class="flex gap-1"><button onclick="window.prepareWaMessage('${fName}', 'היי ${c.first},')" class="bg-green-500 text-white w-7 h-7 rounded-full text-xs shadow btn hover:scale-110">💬</button><button onclick="window.commAction('email', '${fName}', '')" class="bg-blue-400 text-white w-7 h-7 rounded-full text-xs shadow btn hover:scale-110">📧</button></div></div>`; 
+            }).join(''); 
+        };
+        
+        window.openFavoritesManager = () => { 
+            const container = document.getElementById('favCrmCheckboxes'); 
+            container.innerHTML = window.generateCrmCheckboxesHtml('fav-crm-chk'); 
+            setTimeout(() => { document.querySelectorAll('.fav-crm-chk').forEach(cb => { if(window.DB.favorites && window.DB.favorites.includes(cb.value)) cb.checked = true; }); }, 100); 
+            window.toggleModal('favoritesModal'); 
+        };
+        window.saveFavorites = () => { window.DB.favorites = []; document.querySelectorAll('.fav-crm-chk:checked').forEach(cb => window.DB.favorites.push(cb.value)); window.saveData(); window.toggleModal('favoritesModal'); renderFavorites(); };
+
+        // CRM CORE
+        window.generateCrmCheckboxesHtml = (className) => { 
+            if(!window.DB.contacts || window.DB.contacts.length === 0) return '<div class="text-xs text-slate-400 p-2">אין אנשי קשר במאגר.</div>'; 
+            return window.DB.contacts.sort((a, b) => { const nameA = `${a.first} ${a.last||''}`.trim(); const nameB = `${b.first} ${b.last||''}`.trim(); return nameA.localeCompare(nameB, 'he'); }).map(c => { const fullName = `${c.first} ${c.last||''}`.trim(); return `<label class="crm-cb-label flex items-center gap-2 p-1.5 hover:bg-slate-100 rounded cursor-pointer border-b border-slate-100" data-name="${fullName}"><input type="checkbox" class="${className} w-4 h-4 accent-blue-600" value="${fullName}"><span class="text-sm font-bold text-slate-700">${fullName}${c.role ? ' <span class="text-xs font-normal text-slate-400">(' + c.role + ')</span>' : ''}</span></label>`; }).join(''); 
+        };
+        window.filterCrmList = (inputId, listId) => { const val = document.getElementById(inputId).value.toLowerCase(); const container = document.getElementById(listId); if(!container) return; container.querySelectorAll('label').forEach(label => { label.style.display = label.getAttribute('data-name').toLowerCase().includes(val) ? 'flex' : 'none'; }); };
+        window.quickAddCrmFromModal = (inputId, callback) => { const name = document.getElementById(inputId).value.trim(); if(!name) return alert('הקלד שם להוספה.'); const parts = name.split(' '); const newContact = {id: String(Date.now() + Math.random()), first: parts[0], last: parts.slice(1).join(' '), role: '', dist: '', stat: '', phone: '', email: ''}; window.DB.contacts.push(newContact); window.saveData(); window.pendingLinkCrmName = `${newContact.first} ${newContact.last}`.trim(); window.pendingCrmCallback = callback; if(callback) callback(); document.getElementById(inputId).value = ''; };
+        window.openContactModal = () => { document.getElementById('crmId').value = ''; document.querySelectorAll('#contactModal input:not([type=hidden])').forEach(i => i.value = ''); window.toggleModal('contactModal'); };
+        window.saveContact = () => { const id = document.getElementById('crmId').value || String(Date.now() + Math.random()); const c = { id: id, first: document.getElementById('cFirst').value.trim(), last: document.getElementById('cLast').value.trim(), role: document.getElementById('cRole').value.trim(), dist: document.getElementById('cDist').value.trim(), stat: document.getElementById('cStat').value.trim(), phone: document.getElementById('cPhone').value.trim(), email: document.getElementById('cEmail').value.trim() }; if(!c.first) return alert('חובה שם'); if(!document.getElementById('crmId').value) { window.DB.contacts.push(c); } else { const idx = window.DB.contacts.findIndex(x => x.id === id); if(idx >= 0) window.DB.contacts[idx] = c; } window.saveData(); window.toggleModal('contactModal'); if(window.pendingLinkCrmName && window.pendingCrmCallback) { const fullName = `${c.first} ${c.last}`.trim(); setTimeout(() => { document.querySelectorAll('.link-crm-chk, .crs-staff-chk, .meet-crm-chk, .proj-mgr-chk, .fav-crm-chk').forEach(cb => { if(cb.value === fullName) cb.checked = true; }); }, 100); window.pendingLinkCrmName = null; window.pendingCrmCallback = null; } renderAll(); };
+        window.editCrm = (id) => { const c = window.DB.contacts.find(x => x.id === id); if(!c) return; document.getElementById('crmId').value = c.id; document.getElementById('cFirst').value = c.first; document.getElementById('cLast').value = c.last; document.getElementById('cRole').value = c.role || ''; document.getElementById('cDist').value = c.dist || ''; document.getElementById('cStat').value = c.stat || ''; document.getElementById('cPhone').value = c.phone || ''; document.getElementById('cEmail').value = c.email || ''; window.toggleModal('contactModal'); };
+        window.deleteCrm = (id) => { const c = window.DB.contacts.find(x => x.id === id); if(!c) return; const cName = `${c.first} ${c.last || ''}`.trim(); const isLinkedToTask = window.DB.tasks.some(t => t.linkedCrm && t.linkedCrm.includes(cName)); if(isLinkedToTask) return alert(`⚠️ ${cName} משויך למשימה פעילה.`); if(confirm(`למחוק את ${cName}?`)) { window.DB.contacts = window.DB.contacts.filter(x => x.id !== id); window.saveData(); renderAll(); } };
+        function renderCRM() { const table = document.getElementById('crmTable'); if(!table) return; table.innerHTML = window.DB.contacts.map(c => `<tr class="hover:bg-blue-50"><td class="p-3 text-center border-r border-b"><input type="checkbox" class="crm-chk accent-blue-600" value="${c.phone||''}"></td><td class="p-3 font-bold text-blue-800 border-r border-b">${c.first} ${c.last || ''}</td><td class="p-3 text-slate-600 border-r border-b">${c.role || '--'}</td><td class="p-3 border-r border-b">${c.dist || '--'}/${c.stat || '--'}</td><td class="p-3 font-mono text-xs text-green-700 font-bold border-r border-b" dir="ltr">${c.phone || '--'}</td><td class="p-3 text-xs text-blue-600 border-r border-b">${c.email || '--'}</td><td class="p-3 text-center border-r border-b"><div class="flex gap-1 justify-center"><button onclick="window.editCrm('${c.id}')" class="bg-blue-100 text-blue-700 px-2 py-1 rounded btn text-xs">✏️</button><button onclick="window.deleteCrm('${c.id}')" class="bg-red-100 text-red-700 px-2 py-1 rounded btn text-xs">🗑️</button></div></td></tr>`).join(''); }
+        window.toggleCrmAll = (el) => { document.querySelectorAll('.crm-chk').forEach(c => c.checked = el.checked); };
+        window.exportCRM = () => { try { let csv = "\uFEFFשם,משפחה,תפקיד,מחוז,תחנה,טלפון,מייל\n" + window.DB.contacts.map(c => `${c.first},${c.last},${c.role},${c.dist},${c.stat},${c.phone},${c.email}`).join('\n'); const a = document.createElement('a'); a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv); a.download = `crm_${new Date().toISOString().split('T')[0]}.csv`; a.click(); } catch(e) { alert('שגיאה: ' + e.message); } };
+        window.processBulkCrm = () => { const txt = document.getElementById('bulkCrmText').value; if(!txt) return; const rows = txt.split('\n'); let added = 0; rows.forEach(r => { const cols = r.split(/[\t,]/); if(cols.length > 0 && cols[0].trim()) { window.DB.contacts.push({id: String(Date.now() + Math.random()), first: cols[0] ? cols[0].trim() : '', last: cols[1] ? cols[1].trim() : '', role: cols[2] ? cols[2].trim() : '', dist: cols[3] ? cols[3].trim() : '', stat: cols[4] ? cols[4].trim() : '', phone: cols[5] ? cols[5].trim() : '', email: cols[6] ? cols[6].trim() : ''}); added++; } }); window.saveData(); window.toggleModal('bulkCrmModal'); alert(`נקלטו ${added}.`); renderAll(); };
+
+        // COURSES
+        window.renderCrsStaffSelect = () => { document.getElementById('crsStaffCheckboxes').innerHTML = window.generateCrmCheckboxesHtml('crs-staff-chk'); };
+        window.openCourseModal = (id=null) => { document.querySelectorAll('#courseModal input').forEach(i=>i.value=''); window.renderCrsStaffSelect(); if(id) { const c = window.DB.courses.find(x=>String(x.id)===String(id)); if(!c) return; document.getElementById('courseModalTitle').innerText = 'עריכת קורס'; document.getElementById('crsId').value = c.id; document.getElementById('cType').value = c.type; document.getElementById('cName').value = c.name; document.getElementById('cCmdr').value = c.cCmdr || ''; document.getElementById('cCoord').value = c.cCoord || ''; document.getElementById('cdS').value = c.cdS ? c.cdS.split('T')[0] : ''; document.getElementById('cdE').value = c.cdE ? c.cdE.split('T')[0] : ''; document.getElementById('cdCS').value = c.cdCS ? c.cdCS.split('T')[0] : ''; document.getElementById('cdCE').value = c.cdCE ? c.cdCE.split('T')[0] : ''; document.getElementById('dEventDate').value = c.cdCS ? c.cdCS.split('T')[0] : ''; document.getElementById('cLinkSyllabus').value = c.syllabusLink || ''; document.getElementById('cLinkRoster').value = c.rosterLink || ''; if(c.staff) { setTimeout(() => { document.querySelectorAll('.crs-staff-chk').forEach(cb => { if(c.staff.includes(cb.value)) cb.checked = true; }); }, 100); } } else { document.getElementById('courseModalTitle').innerText = 'קורס חדש'; document.getElementById('crsId').value = ''; } window.tglCrs(); window.toggleModal('courseModal'); };
+        window.tglCrs = () => { const t=document.getElementById('cType').value; document.getElementById('cDates').classList.toggle('hidden', t==='event'); document.getElementById('eventDateContainer').classList.toggle('hidden', t!=='event'); };
+        window.saveCourse = () => { const type = document.getElementById('cType').value; const name = document.getElementById('cName').value; if(!name) return alert('חובה שם'); let staffArr = []; document.querySelectorAll('.crs-staff-chk:checked').forEach(cb => staffArr.push(cb.value)); const cId = document.getElementById('crsId').value ? parseInt(document.getElementById('crsId').value) : Date.now(); let c = { id: cId, type, name, cCmdr: document.getElementById('cCmdr').value, cCoord: document.getElementById('cCoord').value, syllabusLink: document.getElementById('cLinkSyllabus').value, rosterLink: document.getElementById('cLinkRoster').value, steps: [], staff: staffArr, isArchived: false, archiveNote: '' }; if(type !== 'event') { c.cdS = document.getElementById('cdS').value ? new Date(document.getElementById('cdS').value).toISOString() : null; c.cdE = document.getElementById('cdE').value ? new Date(document.getElementById('cdE').value).toISOString() : null; c.cdCS = document.getElementById('cdCS').value ? new Date(document.getElementById('cdCS').value).toISOString() : null; c.cdCE = document.getElementById('cdCE').value ? new Date(document.getElementById('cdCE').value).toISOString() : null; if(!document.getElementById('crsId').value && c.cdCS && type==='trend') { if(!window.DB.templates || window.DB.templates.length === 0) window.DB.templates = window.defaultTemplates; c.steps = window.DB.templates.map(t => { let dt = new Date(c[t.a] || c.cdCS); dt.setDate(dt.getDate() + t.d); return {name: t.n, deadline: dt.toISOString(), done: false, msgTemplate: t.msg || '', linkedCrm: '', note: ''}; }); } else if(document.getElementById('crsId').value) { c.steps = window.DB.courses.find(x=>String(x.id)===String(cId)).steps || []; } } else { c.cdCS = document.getElementById('dEventDate').value ? new Date(document.getElementById('dEventDate').value).toISOString() : null; } if(!document.getElementById('crsId').value) { window.DB.courses.push(c); } else { const idx = window.DB.courses.findIndex(x=>String(x.id)===String(cId)); if(idx >= 0) window.DB.courses[idx] = c; } window.saveData(); window.toggleModal('courseModal'); renderAll(); };
+        window.archiveCourse = (id) => { const note = prompt('רגע לפני ארכוב - הזן הערות או סיכום קצר של הקורס לטובת דוחות:'); if(note !== null) { const c = window.DB.courses.find(x=>String(x.id)===String(id)); if(c) { c.isArchived = true; c.archiveNote = note; window.saveData(); renderAll(); } } };
+
+        function renderCourses() { 
+            const grid = document.getElementById('coursesGridList'); if(!grid) return; grid.innerHTML=''; 
+            ['תכנון','סגל','בביצוע','סיכום'].forEach((s, i) => grid.innerHTML += `<div class="kanban-col shadow-inner"><div class="p-2 bg-slate-200 text-slate-700 font-bold rounded mb-3 text-center">${s}</div><div id="c-list-${i}" class="space-y-3"></div></div>`); 
+            const now = new Date().setHours(0,0,0,0); 
+            window.DB.courses.forEach(c => { 
+                if(c.isArchived) return; 
+                let sIdx = 0; if(c.type==='event') { let d = new Date(c.cdCS).setHours(0,0,0,0); sIdx = d < now ? 3 : (d === now ? 2 : 0); } else { let sC = c.cdCS ? new Date(c.cdCS).setHours(0,0,0,0) : null; let eC = c.cdCE ? new Date(c.cdCE).setHours(0,0,0,0) : null; let sS = c.cdS ? new Date(c.cdS).setHours(0,0,0,0) : null; if(eC && now > eC) sIdx = 3; else if(sC && now >= sC) sIdx = 2; else if(sS && now >= sS) sIdx = 1; } 
+                const pct = c.steps && c.steps.length ? Math.round((c.steps.filter(s=>s.done).length/c.steps.length)*100) : 0; 
+                const staffStr = c.staff && c.staff.length ? c.staff.slice(0, 2).join(', ') + (c.staff.length > 2 ? '...' : '') : 'ללא'; 
+                const vaultHtml = (c.syllabusLink || c.rosterLink) ? `<div class="flex gap-2 mb-2 border-t pt-2">${c.syllabusLink ? `<a href="${c.syllabusLink}" target="_blank" class="text-[10px] bg-indigo-50 text-indigo-700 px-2 py-1 rounded">🔗 סילבוס</a>`:''} ${c.rosterLink ? `<a href="${c.rosterLink}" target="_blank" class="text-[10px] bg-indigo-50 text-indigo-700 px-2 py-1 rounded">🔗 חניכים</a>`:''}</div>` : ''; 
+                
+                const isAccordionOpen = window.openAccordions.has(`det-${c.id}`);
+
+                document.getElementById(`c-list-${sIdx}`).innerHTML += `
+                <div class="bg-white p-3 rounded-lg border-t-4 ${c.type==='trend'?'border-indigo-500':'border-blue-400'} shadow-sm">
+                    <div class="flex justify-between font-bold mb-1"><span class="text-[15px]">${c.type==='event'?'🎪':'🎓'} ${c.name}</span><span class="text-indigo-600">${pct>0?pct+'%':''}</span></div>
+                    <div class="text-[10px] text-slate-500 mb-2">מפקד: ${c.cCmdr||'--'}<br>סגל: ${staffStr}<br>פתיחה: ${c.cdCS?new Date(c.cdCS).toLocaleDateString('he-IL'):'--'}</div>
+                    ${vaultHtml}
+                    <div class="flex gap-2 mt-2">
+                        <button class="flex-1 bg-slate-100 p-1 text-center text-xs font-bold text-slate-600 rounded btn" onclick="window.toggleAccordion('det-${c.id}')">משימות ▼</button>
+                        <button class="bg-slate-100 p-1 px-3 text-center text-xs font-bold text-slate-600 rounded btn" onclick="window.openCourseModal(${c.id})">✏️</button>
+                    </div>
+                    <div id="det-${c.id}" class="${isAccordionOpen ? '' : 'hidden'} mt-2 pt-2 border-t">
+                        <div class="flex gap-1 mb-2"><input id="nt-${c.id}" class="input-std text-xs p-1" placeholder="משימה..."><input type="date" id="nd-${c.id}" class="input-std text-xs w-24 p-1"><button onclick="window.addCrsTask(${c.id})" class="bg-indigo-100 text-indigo-700 px-3 rounded font-bold btn">+</button></div>
+                        <div class="max-h-48 overflow-y-auto space-y-2 mb-2">
+                            ${(c.steps||[]).map((s,i)=>`
+                                <div class="flex flex-col text-xs border-b border-slate-100 pb-1">
+                                    <div class="flex justify-between items-center w-full">
+                                        <div class="flex items-center gap-2 w-3/5"><input type="checkbox" class="accent-indigo-600 w-4 h-4" ${s.done?'checked':''} onchange="window.tglItem('course',${c.id},${i})"><span class="${s.done?'line-through text-slate-400':'font-bold'} whitespace-normal break-words">${s.name}</span></div>
+                                        <div class="flex gap-2 w-2/5 justify-end">
+                                            <span class="text-[10px] font-mono">${s.deadline?new Date(s.deadline).toLocaleDateString('he-IL'):''}</span>
+                                            <button onclick="window.openLinkModal('course', ${c.id}, ${i})" class="text-[10px] bg-slate-100 px-1.5 py-0.5 rounded btn shadow-sm border">🔗</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                        <button onclick="window.archiveCourse(${c.id})" class="text-[10px] text-orange-500 font-bold w-full text-right mt-2 btn border-t pt-2">📦 ארכב קורס</button>
+                    </div>
+                </div>`; 
+            }); 
+        }
+        window.addCrsTask = (id) => { const txt = document.getElementById(`nt-${id}`).value; const d = document.getElementById(`nd-${id}`).value; if(txt) { const course = window.DB.courses.find(x=>x.id===id); if(course) { course.steps.push({name: txt, deadline: d ? new Date(d).toISOString() : null, done: false, linkedCrm: '', note: ''}); window.saveData(); renderAll(); } } };
+
+        // PROJECTS
+        window.renderProjMgrSelect = () => { document.getElementById('projMgrCheckboxes').innerHTML = window.generateCrmCheckboxesHtml('proj-mgr-chk'); };
+        window.openProjectModal = (id=null) => { document.querySelectorAll('#projectModal input, #projectModal textarea').forEach(i=>i.value=''); window.renderProjMgrSelect(); if(id) { const p = window.DB.projects.find(x=>String(x.id)===String(id)); if(!p) return; document.getElementById('projModalTitle').innerText = 'עריכה'; document.getElementById('projId').value = p.id; document.getElementById('projName').value = p.name; document.getElementById('projDesc').value = p.desc || ''; document.getElementById('pLinkDrive').value = p.driveLink || ''; document.getElementById('projFirstMilestone').classList.add('hidden'); if(p.manager) { const managers = p.manager.split(',').map(m => m.trim()); setTimeout(() => { document.querySelectorAll('.proj-mgr-chk').forEach(cb => { if(managers.includes(cb.value)) cb.checked = true; }); }, 100); } } else { document.getElementById('projModalTitle').innerText = 'חדש'; document.getElementById('projId').value = ''; document.getElementById('projFirstMilestone').classList.remove('hidden'); } window.toggleModal('projectModal'); };
+        window.saveProject = () => { const n = document.getElementById('projName').value; if(!n) return alert('חובה שם'); let mgrArr = []; document.querySelectorAll('.proj-mgr-chk:checked').forEach(cb => mgrArr.push(cb.value)); const pId = document.getElementById('projId').value ? parseInt(document.getElementById('projId').value) : Date.now(); let p = { id: pId, name: n, manager: mgrArr.join(', '), desc: document.getElementById('projDesc').value, driveLink: document.getElementById('pLinkDrive').value, isArchived: false }; if(!document.getElementById('projId').value) { p.milestones = [{text: document.getElementById('projMilestone').value || 'אבן דרך', date: document.getElementById('projDate').value ? new Date(document.getElementById('projDate').value).toISOString() : null, done: false, linkedCrm: '', note: ''}]; window.DB.projects.push(p); } else { const idx = window.DB.projects.findIndex(x=>String(x.id)===String(pId)); if(idx >= 0) { p.milestones = window.DB.projects[idx].milestones; window.DB.projects[idx] = p; } } window.saveData(); window.toggleModal('projectModal'); renderAll(); };
+        window.addMilestone = (pid) => { const t = document.getElementById(`newMile-${pid}`).value; const d = document.getElementById(`newMileDate-${pid}`).value; if(t) { const project = window.DB.projects.find(x=>x.id===pid); if(project) { project.milestones.push({text: t, date: d ? new Date(d).toISOString() : null, done: false, linkedCrm: '', note: ''}); window.saveData(); renderAll(); } } };
+        function renderProjects() { const container = document.getElementById('projectsList'); if(!container) return; container.innerHTML = window.DB.projects.filter(p=>!p.isArchived).map(p => { const vaultHtml = p.driveLink ? `<a href="${p.driveLink}" target="_blank" class="text-[10px] bg-purple-100 text-purple-800 px-2 py-1 rounded block w-max mb-3">🔗 ענן</a>` : ''; return `<div class="glass-card shadow-sm border-t-4 border-purple-500 flex flex-col"><div class="p-4 bg-white flex justify-between font-bold text-purple-900 border-b items-center"><span class="text-lg">🏗️ ${p.name}</span><div class="flex gap-2 items-center"><span class="text-xs font-normal text-slate-600 bg-slate-100 px-2 py-1 rounded">${p.manager||'ללא'}</span><button class="text-xs bg-slate-100 px-2 py-1 rounded btn" onclick="window.openProjectModal(${p.id})">✏️</button></div></div><div class="p-4 bg-slate-50 flex-1 flex flex-col"><div class="text-sm text-slate-600 mb-2 italic">${p.desc||''}</div>${vaultHtml}<div class="space-y-2 mb-4 pt-2 border-t flex-1">${p.milestones.map((m,i)=>`<div class="flex justify-between items-center text-sm border-b pb-2"><div class="flex gap-2 items-center"><input type="checkbox" class="accent-purple-600 w-4 h-4" ${m.done?'checked':''} onchange="window.tglItem('project',${p.id},${i})"><span class="${m.done?'line-through text-slate-400':'font-bold'}">${m.text}</span></div><div class="flex gap-2"><span class="text-xs">${m.date?new Date(m.date).toLocaleDateString('he-IL'):''}</span><button onclick="window.openLinkModal('project', ${p.id}, ${i})" class="text-[10px] bg-slate-200 px-1.5 py-0.5 rounded btn">🔗</button></div></div>`).join('')}</div><div class="flex gap-2 pt-2"><input id="newMile-${p.id}" class="input-std text-sm flex-1" placeholder="אבן דרך..."><input type="date" id="newMileDate-${p.id}" class="input-std w-28 text-xs"><button onclick="window.addMilestone(${p.id})" class="bg-purple-200 text-purple-800 px-4 rounded font-bold btn">+</button></div><button onclick="if(confirm('לארכב?')) { window.DB.projects.find(x=>x.id===${p.id}).isArchived=true; window.saveData(); renderAll(); }" class="text-xs font-bold text-orange-500 mt-4 w-full text-right btn">📦</button></div></div>`; }).join(''); }
+
+        // MEETINGS (IMPROVED CONTENT PASSING)
+        window.renderMeetCrmSelect = () => { document.getElementById('meetCrmCheckboxes').innerHTML = window.generateCrmCheckboxesHtml('meet-crm-chk'); };
+        window.openMeetingModal = () => { window.renderMeetCrmSelect(); document.getElementById('meetDate').value = ''; window.toggleModal('meetingModal'); };
+        window.saveMeeting = () => { let selected = []; document.querySelectorAll('.meet-crm-chk:checked').forEach(cb => selected.push(cb.value)); if(selected.length === 0) return alert('בחר גורם.'); const d = document.getElementById('meetDate').value; window.DB.meetings.push({id: Date.now(), name: selected.join(', '), date: d ? new Date(d).toISOString() : null, topics: [], isArchived: false}); window.saveData(); window.toggleModal('meetingModal'); renderAll(); };
+        window.addMeetingTopic = (mid) => { const v = document.getElementById(`newTopic-${mid}`).value; if(v) { const meeting = window.DB.meetings.find(m=>m.id===mid); if(meeting) { meeting.topics.push({text: v, done: false, note: '', linkedCrm: ''}); window.saveData(); renderAll(); } } };
+        function renderMeetings() { 
+            const container = document.getElementById('meetingsGrid'); if(!container) return; 
+            container.innerHTML = window.DB.meetings.filter(m=>!m.isArchived).map(m => { 
+                const firstContact = m.name.split(',')[0].trim(); 
+                const dHtml = m.date ? `<div class="text-xs bg-cyan-100 text-cyan-800 px-2 py-1 rounded font-bold mt-1">מתוכנן ל: ${new Date(m.date).toLocaleDateString('he-IL')}</div>` : ''; 
+                
+                // Build Content String for sharing
+                let summaryContent = `נושאים לפגישה:\n`;
+                (m.topics||[]).forEach(t => {
+                    summaryContent += `- ${t.text}`;
+                    if(t.note) {
+                        // strip HTML tags from note if any
+                        const cleanNote = t.note.replace(/<[^>]*>?/gm, '');
+                        summaryContent += `\n  הערות: ${cleanNote}`;
+                    }
+                    summaryContent += `\n`;
+                });
+
+                return `<div class="glass-card shadow-sm border-t-4 border-cyan-500 flex flex-col h-full"><div class="p-3 bg-white border-b font-bold flex justify-between items-center"><div class="flex flex-col"><span class="text-lg text-cyan-900">🤝 ${m.name}</span>${dHtml}</div><button onclick="if(confirm('לארכב?')){window.DB.meetings.find(x=>x.id===${m.id}).isArchived=true;window.saveData();renderAll();}" class="text-red-500 bg-red-50 hover:bg-red-100 px-2 py-1 rounded font-bold btn transition">✕ ארכב</button></div><div class="px-3 pt-3 flex gap-2 justify-center border-b pb-3"><button onclick="window.prepareWaMessage('${firstContact}', \`סיכום פגישה ${m.name}:\\n${summaryContent}\`)" class="flex-1 text-sm bg-green-50 text-green-700 py-2 rounded font-bold btn border shadow-sm">💬 WA</button><button onclick="window.commAction('email', '${firstContact}', 'סיכום פגישה ${m.name}', \`${summaryContent}\`)" class="flex-1 text-sm bg-blue-50 text-blue-700 py-2 rounded font-bold btn border shadow-sm">📧 מייל</button><button onclick="window.commAction('ics', '${firstContact}', 'פגישה: ${m.name}', \`${summaryContent}\`)" class="flex-1 text-sm bg-orange-50 text-orange-700 py-2 rounded font-bold btn border shadow-sm">📅 יומן</button></div><div class="p-3 space-y-3 bg-slate-50 flex-1 flex flex-col"><div class="flex-1 space-y-2">${(m.topics||[]).map((t,i) => `<div class="text-sm bg-white p-2 rounded-lg border shadow-sm"><div class="flex items-start gap-2 mb-2"><input type="checkbox" class="mt-1 accent-cyan-600 w-4 h-4" ${t.done?'checked':''} onchange="window.tglItem('meeting',${m.id},${i})"> <span class="font-bold ${t.done?'line-through text-slate-400':''} leading-tight">${t.text}</span></div><textarea class="w-full text-xs bg-slate-50 p-2 border rounded resize-none h-12" placeholder="Enter לשמירת הערה..." onkeyup="if(event.key==='Enter'){window.updateGlobalNote('meeting',${m.id},${i},this.value); this.value='';}"></textarea>${t.note ? `<div class="mt-2 text-[11px] text-slate-500 max-h-16 overflow-y-auto log-scroll">${t.note}</div>` : ''}</div>`).join('')}</div><div class="flex gap-2 pt-2 mt-2 border-t"><input id="newTopic-${m.id}" class="input-std text-sm" placeholder="נושא חדש..." onkeyup="if(event.key==='Enter'){window.addMeetingTopic(${m.id});this.value='';}"><button onclick="window.addMeetingTopic(${m.id})" class="bg-cyan-100 text-cyan-800 px-4 rounded btn font-bold">+</button></div></div></div>`; 
+            }).join(''); 
+        }
+
+        // MAP
+        let opsMap = null;
+        window.renderMap = () => { if (document.getElementById('page-ops') && !document.getElementById('page-ops').classList.contains('hidden') && !opsMap) { opsMap = L.map('opsMapContainer').setView([31.7683, 35.2137], 8); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(opsMap); } if (opsMap) setTimeout(() => opsMap.invalidateSize(), 300); };
+        window.mapLocate = () => { const v = document.getElementById('mapCoords').value.trim(); if (v.includes(',')) { const parts = v.split(','); const lat = parseFloat(parts[0]); const lng = parseFloat(parts[1]); if(!isNaN(lat) && !isNaN(lng) && opsMap) { opsMap.setView([lat, lng], 15); L.marker([lat, lng]).addTo(opsMap).bindPopup(`${lat}, ${lng}`).openPopup(); } else alert('פורמט שגוי.'); } else alert('הזן נ.צ מופרדות בפסיק'); };
+
+        // TEMPLATES & SETTINGS
+        window.renderTemplatesEditor = () => { const container = document.getElementById('templatesEditorList'); if(!container) return; if(!window.DB.templates || window.DB.templates.length === 0) window.DB.templates = window.defaultTemplates; container.innerHTML = window.DB.templates.map((t, i) => `<div class="bg-white p-3 rounded-lg border shadow-sm"><div class="flex gap-2 mb-2"><input type="text" value="${t.n}" onchange="window.DB.templates[${i}].n = this.value" class="input-std flex-1 font-bold" placeholder="שם"><select onchange="window.DB.templates[${i}].a = this.value" class="input-std w-32"><option value="cdS" ${t.a==='cdS'?'selected':''}>סגל</option><option value="cdCS" ${t.a==='cdCS'?'selected':''}>קורס</option><option value="cdCE" ${t.a==='cdCE'?'selected':''}>סיום</option></select><input type="number" value="${t.d}" onchange="window.DB.templates[${i}].d = parseInt(this.value)" class="input-std w-20 text-center" placeholder="ימים"><button onclick="window.DB.templates.splice(${i}, 1); window.renderTemplatesEditor()" class="bg-red-100 text-red-700 px-3 rounded btn">🗑️</button></div><textarea onchange="window.DB.templates[${i}].msg = this.value" class="input-std h-16 text-xs" placeholder="תבנית WA (השתמש בתגיות)">${t.msg||''}</textarea></div>`).join(''); };
+        window.addTemplateStep = () => { if(!window.DB.templates) window.DB.templates = []; window.DB.templates.push({n: "שלב חדש", a: "cdCS", d: 0, msg: ""}); window.renderTemplatesEditor(); };
+        window.resetTemplatesToDefault = () => { if(confirm('לשחזר שלבים לברירת המחדל?')) { window.DB.templates = JSON.parse(JSON.stringify(window.defaultTemplates)); window.renderTemplatesEditor(); } };
+        window.closeSettingsModal = () => { window.saveData(); window.toggleModal('settingsModal'); };
+
+        // BRIEFING REPORT (UPDATED LOGIC: Tasks 8 days, Meetings 4 days)
+        window.printBriefing = () => { 
+            document.getElementById('printDate').innerText = new Date().toLocaleDateString('he-IL'); 
+            const now = new Date().setHours(0,0,0,0);
+            
+            const taskLimit = new Date(); taskLimit.setDate(taskLimit.getDate() + 8); 
+            const meetLimit = new Date(); meetLimit.setDate(meetLimit.getDate() + 4); 
+            
+            let tasks = []; 
+            window.DB.tasks.forEach(t => { 
+                if(!t.done) {
+                    const tDate = t.deadline ? new Date(t.deadline).setHours(0,0,0,0) : null;
+                    if(!tDate || tDate <= taskLimit || t.priority == 3) {
+                        tasks.push(`[ ] ${t.text} ${t.priority == 3 ? '(דחוף)' : ''}`); 
+                    }
+                }
+            }); 
+            document.getElementById('pbTasks').innerHTML = tasks.join('<br>') || '<span class="text-slate-400">אין משימות קריטיות קרובות.</span>'; 
+            
+            let meets = []; 
+            window.DB.meetings.forEach(m => { 
+                const mDate = m.date ? new Date(m.date).setHours(0,0,0,0) : null;
+                if(mDate && mDate >= now && mDate <= meetLimit) {
+                    let open = (m.topics || []).filter(t => !t.done); 
+                    if(open.length) meets.push(`<b>${m.name} (${new Date(m.date).toLocaleDateString('he-IL')}):</b> ${open.map(x => x.text).join(' | ')}`); 
+                }
+            }); 
+            document.getElementById('pbMeetings').innerHTML = meets.join('<br><br>') || '<span class="text-slate-400">אין פגישות ב-4 הימים הקרובים.</span>'; 
+            
+            let crs = []; 
+            window.DB.courses.forEach(c => { 
+                if(!c.isArchived && c.cdCS) {
+                    const startD = new Date(c.cdCS).setHours(0,0,0,0);
+                    const endD = c.cdCE ? new Date(c.cdCE).setHours(0,0,0,0) : null;
+                    if(startD <= taskLimit && (!endD || endD >= now)) {
+                        crs.push(`<b>${c.name}</b> (${c.cCmdr || '--'}) - פתיחה: ${new Date(startD).toLocaleDateString('he-IL')}`); 
+                    }
+                }
+            }); 
+            document.getElementById('pbCourses').innerHTML = crs.join('<br>') || '<span class="text-slate-400">אין מופעים קרובים.</span>'; 
+            
+            document.querySelector('main').classList.add('hidden'); 
+            document.getElementById('printArea').classList.remove('hidden'); 
+            window.print(); 
+            setTimeout(() => { 
+                document.querySelector('main').classList.remove('hidden'); 
+                document.getElementById('printArea').classList.add('hidden'); 
+            }, 1000); 
+        };
+
+        // TIMER
+        let ti, tl;
+        window.startTimer = () => { const btn = document.getElementById('btnTimer'); if(ti) { clearInterval(ti); ti = null; btn.innerText = "המשך"; btn.className = "bg-green-600 hover:bg-green-500 px-6 py-2 rounded font-bold flex items-center btn transition"; } else { if(!tl) tl = document.getElementById('timerSetMin').value * 60; btn.innerText = "השהה"; btn.className = "bg-yellow-500 text-black px-6 py-2 rounded font-bold flex items-center btn transition"; ti = setInterval(() => { if(tl > 0) { tl--; let m = Math.floor(tl / 60).toString().padStart(2, '0'); let s = (tl % 60).toString().padStart(2, '0'); document.getElementById('timerDisplay').innerText = `${m}:${s}`; } else { clearInterval(ti); document.getElementById('timerSound').play().catch(e => {}); alert('⏰ הזמן נגמר!'); window.resetTimer(); } }, 1000); } };
+        window.resetTimer = () => { clearInterval(ti); ti = null; tl = null; document.getElementById('timerDisplay').innerText = `${document.getElementById('timerSetMin').value}:00`; const btn = document.getElementById('btnTimer'); btn.innerText = "התחל"; btn.className = "bg-green-600 hover:bg-green-500 px-6 py-2 rounded font-bold flex items-center btn transition"; };
+    </script>
 </body>
 </html>
